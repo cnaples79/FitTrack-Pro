@@ -1,6 +1,5 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("native.cocoapods")
     id("com.android.library")
     kotlin("plugin.serialization")
     id("com.squareup.sqldelight")
@@ -8,20 +7,8 @@ plugins {
 
 kotlin {
     android()
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
-
-    cocoapods {
-        summary = "Shared Module for FitTrack Pro"
-        homepage = "https://github.com/yourusername/FitTrackPro"
-        version = "1.0"
-        ios.deploymentTarget = "14.1"
-        podfile = project.file("../iosApp/Podfile")
-        framework {
-            baseName = "shared"
-            isStatic = true
-        }
+    js(IR) {
+        browser()
     }
 
     sourceSets {
@@ -46,29 +33,24 @@ kotlin {
                 implementation("com.squareup.sqldelight:coroutines-extensions:1.5.5")
             }
         }
+
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
             }
         }
+
         val androidMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-android:2.3.6")
                 implementation("com.squareup.sqldelight:android-driver:1.5.5")
             }
         }
-        val androidUnitTest by getting
-        val iosX64Main by getting
-        val iosArm64Main by getting
-        val iosSimulatorArm64Main by getting
-        val iosMain by creating {
-            dependsOn(commonMain)
-            iosX64Main.dependsOn(this)
-            iosArm64Main.dependsOn(this)
-            iosSimulatorArm64Main.dependsOn(this)
+
+        val jsMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-darwin:2.3.6")
-                implementation("com.squareup.sqldelight:native-driver:1.5.5")
+                implementation("io.ktor:ktor-client-js:2.3.6")
+                implementation("com.squareup.sqldelight:sqljs-driver:1.5.5")
             }
         }
     }

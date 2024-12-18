@@ -2,7 +2,7 @@ package com.fittrackpro.web
 
 import com.fittrackpro.web.components.*
 import emotion.react.css
-import mui.material.*
+import mui.material.CssBaseline
 import mui.material.styles.ThemeProvider
 import mui.material.styles.createTheme
 import react.*
