@@ -1,0 +1,55 @@
+CREATE TABLE goal (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    target_date TEXT NOT NULL,
+    type TEXT NOT NULL,
+    target INTEGER NOT NULL,
+    progress INTEGER NOT NULL DEFAULT 0,
+    completed INTEGER NOT NULL DEFAULT 0
+);
+
+insertGoal:
+INSERT INTO goal(id, title, description, target_date, type, target, progress, completed)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+updateGoal:
+UPDATE goal
+SET title = ?, description = ?, target_date = ?, type = ?, target = ?, progress = ?, completed = ?
+WHERE id = ?;
+
+updateGoalProgress:
+UPDATE goal
+SET progress = ?, completed = ?
+WHERE id = ?;
+
+deleteGoal:
+DELETE FROM goal WHERE id = ?;
+
+getAllGoals:
+SELECT *
+FROM goal
+ORDER BY target_date ASC;
+
+getGoalById:
+SELECT *
+FROM goal
+WHERE id = ?;
+
+getActiveGoals:
+SELECT *
+FROM goal
+WHERE completed = 0 AND target_date >= ?
+ORDER BY target_date ASC;
+
+deleteOldCompletedGoals:
+DELETE FROM goal
+WHERE completed = 1 AND target_date < ?;
+
+getGoalStats:
+SELECT 
+    COUNT(*) as total_goals,
+    SUM(CASE WHEN completed = 1 THEN 1 ELSE 0 END) as completed_goals,
+    AVG(CASE WHEN completed = 1 THEN 1.0 ELSE 0.0 END) * 100 as completion_rate
+FROM goal
+WHERE target_date >= ?;

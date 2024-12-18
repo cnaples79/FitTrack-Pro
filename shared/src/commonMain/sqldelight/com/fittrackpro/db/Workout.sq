@@ -1,0 +1,51 @@
+CREATE TABLE workout (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    duration INTEGER NOT NULL,
+    calories_burned INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    notes TEXT
+);
+
+insertWorkout:
+INSERT INTO workout(id, name, type, duration, calories_burned, date, notes)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateWorkout:
+UPDATE workout
+SET name = ?, type = ?, duration = ?, calories_burned = ?, date = ?, notes = ?
+WHERE id = ?;
+
+deleteWorkout:
+DELETE FROM workout WHERE id = ?;
+
+getAllWorkouts:
+SELECT *
+FROM workout
+ORDER BY date DESC;
+
+getWorkoutById:
+SELECT *
+FROM workout
+WHERE id = ?;
+
+getWorkoutsByDateRange:
+SELECT *
+FROM workout
+WHERE date BETWEEN ? AND ?
+ORDER BY date DESC;
+
+deleteOldWorkouts:
+DELETE FROM workout
+WHERE date < ?;
+
+getWorkoutStats:
+SELECT 
+    COUNT(*) as total_workouts,
+    SUM(duration) as total_duration,
+    SUM(calories_burned) as total_calories,
+    AVG(duration) as avg_duration,
+    AVG(calories_burned) as avg_calories
+FROM workout
+WHERE date >= ?;
