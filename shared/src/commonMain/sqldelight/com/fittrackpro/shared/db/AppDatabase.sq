@@ -1,0 +1,24 @@
+CREATE TABLE User (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE Workout (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    date INTEGER NOT NULL,
+    duration INTEGER NOT NULL,
+    FOREIGN KEY (userId) REFERENCES User(id)
+);
+
+CREATE TABLE Exercise (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workoutId INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    sets INTEGER NOT NULL,
+    reps INTEGER NOT NULL,
+    weight REAL,
+    FOREIGN KEY (workoutId) REFERENCES Workout(id)
+);
