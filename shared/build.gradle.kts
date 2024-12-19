@@ -1,56 +1,76 @@
 plugins {
     kotlin("multiplatform")
-    id("com.android.library")
     kotlin("plugin.serialization")
-    id("com.squareup.sqldelight")
+    id("com.android.library")
+    id("app.cash.sqldelight")
 }
 
 kotlin {
-    android()
+    androidTarget {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "1.8"
+            }
+        }
+    }
+    
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach {
+        it.binaries.framework {
+            baseName = "shared"
+        }
+    }
+    
     js(IR) {
         browser()
+        binaries.executable()
     }
 
     sourceSets {
         val commonMain by getting {
             dependencies {
-                // Coroutines
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-                
-                // Ktor client
-                implementation("io.ktor:ktor-client-core:2.3.6")
-                implementation("io.ktor:ktor-client-content-negotiation:2.3.6")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.6")
-                
-                // Serialization
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-                
-                // DateTime
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
-                
-                // SQLDelight
-                implementation("com.squareup.sqldelight:runtime:1.5.5")
-                implementation("com.squareup.sqldelight:coroutines-extensions:1.5.5")
+                implementation("app.cash.sqldelight:runtime:2.0.0")
+                implementation("app.cash.sqldelight:coroutines-extensions:2.0.0")
             }
         }
-
+        
+        val androidMain by getting {
+            dependencies {
+                implementation("app.cash.sqldelight:android-driver:2.0.0")
+            }
+        }
+        
+        val iosX64Main by getting {
+            dependencies {
+                implementation("app.cash.sqldelight:native-driver:2.0.0")
+            }
+        }
+        val iosArm64Main by getting {
+            dependencies {
+                implementation("app.cash.sqldelight:native-driver:2.0.0")
+            }
+        }
+        val iosSimulatorArm64Main by getting {
+            dependencies {
+                implementation("app.cash.sqldelight:native-driver:2.0.0")
+            }
+        }
+        
+        val jsMain by getting {
+            dependencies {
+                implementation("app.cash.sqldelight:web-worker-driver:2.0.0")
+            }
+        }
+        
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-            }
-        }
-
-        val androidMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-android:2.3.6")
-                implementation("com.squareup.sqldelight:android-driver:1.5.5")
-            }
-        }
-
-        val jsMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-js:2.3.6")
-                implementation("com.squareup.sqldelight:sqljs-driver:1.5.5")
             }
         }
     }
@@ -62,8 +82,12 @@ android {
     defaultConfig {
         minSdk = 24
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+}
+
+sqldelight {
+    databases {
+        create("AppDatabase") {
+            packageName.set("com.fittrackpro.shared.db")
+        }
     }
 }

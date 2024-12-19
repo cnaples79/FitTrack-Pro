@@ -12,7 +12,18 @@ kotlin {
                 }
             }
             binaries.executable()
-            useCommonJs()
+            runTask {
+                devServer = devServer?.copy(
+                    port = 8080
+                )
+            }
+            distribution {
+                directory = File("$projectDir/build/distributions")
+            }
+        }
+        nodejs {
+            
+            binaries.executable()
         }
     }
 
