@@ -12,6 +12,8 @@ import com.fittrackpro.shared.util.CommonFlow
 import com.fittrackpro.shared.util.asCommonFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.datetime.LocalDateTime
 
 class WorkoutViewModel(
     private val repository: WorkoutRepository,
@@ -35,7 +37,7 @@ class WorkoutViewModel(
         viewModelScope.launch(dispatchers.io) {
             _isLoading.value = true
             try {
-                repository.getWorkouts().collect { workouts ->
+                repository.observeWorkouts().collectLatest { workouts ->
                     _workouts.value = workouts
                     _error.value = null
                 }
@@ -76,6 +78,21 @@ class WorkoutViewModel(
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = e.message
+            }
+        }
+    }
+
+    fun getWorkoutsByDateRange(start: LocalDateTime, end: LocalDateTime) {
+        viewModelScope.launch(dispatchers.io) {
+            _isLoading.value = true
+            try {
+                val workouts = repository.getWorkoutsByDateRange(start, end)
+                _workouts.value = workouts
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = e.message
+            } finally {
+                _isLoading.value = false
             }
         }
     }

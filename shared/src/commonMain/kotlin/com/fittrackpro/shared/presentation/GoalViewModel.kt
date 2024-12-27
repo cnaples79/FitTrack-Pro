@@ -9,6 +9,7 @@ import com.fittrackpro.shared.util.asCommonFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 
 class GoalViewModel(
     private val repository: GoalRepository,
@@ -35,9 +36,9 @@ class GoalViewModel(
         viewModelScope.launch(dispatchers.io) {
             _isLoading.value = true
             try {
-                repository.getGoals().collect { goals ->
+                repository.observeGoals().collectLatest { goals ->
                     _goals.value = goals
-                    _activeGoals.value = goals.filter { !it.completed }
+                    _activeGoals.value = goals.filter { it.status != "COMPLETED" }
                     _error.value = null
                 }
             } catch (e: Exception) {
@@ -59,10 +60,10 @@ class GoalViewModel(
         }
     }
 
-    fun updateGoalProgress(id: String, progress: Int, completed: Boolean) {
+    fun updateGoal(goal: Goal) {
         viewModelScope.launch(dispatchers.io) {
             try {
-                repository.updateGoalProgress(id, progress, completed)
+                repository.updateGoal(goal)
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = e.message
@@ -70,10 +71,21 @@ class GoalViewModel(
         }
     }
 
-    fun deleteGoal(id: String) {
+    fun updateGoalProgress(id: Long, progress: Int, completed: Boolean) {
         viewModelScope.launch(dispatchers.io) {
             try {
-                repository.deleteGoal(id)
+                repository.updateGoalProgress(id.toString(), progress, completed)
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = e.message
+            }
+        }
+    }
+
+    fun deleteGoal(id: Long) {
+        viewModelScope.launch(dispatchers.io) {
+            try {
+                repository.deleteGoal(id.toString())
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = e.message

@@ -1,0 +1,11 @@
+import kotlin.Boolean;
+import kotlin.String;
+import kotlin.collections.List;
+
+CREATE TABLE IF NOT EXISTS schemaVersion (
+    version INTEGER NOT NULL PRIMARY KEY
+);
+
+-- Queries
+getSchemaVersion:
+SELECT version FROM schemaVersion LIMIT 1;

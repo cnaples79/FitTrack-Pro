@@ -1,25 +1,27 @@
 package com.fittrackpro.shared.domain.model
 
-import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Workout(
-    val id: String,
-    val name: String,
-    val type: WorkoutType,
-    val duration: Int, // in minutes
-    val caloriesBurned: Int,
-    val date: LocalDateTime,
-    val notes: String? = null
+    val id: Long,
+    val userId: Long,
+    val type: String,
+    val duration: Long,
+    val caloriesBurned: Long?,
+    val distance: Double?,
+    val date: Long,
+    val notes: String?
 )
 
 @Serializable
 enum class WorkoutType {
+    RUNNING,
+    CYCLING,
+    SWIMMING,
+    WALKING,
     STRENGTH,
-    CARDIO,
-    FLEXIBILITY,
-    HIIT,
     YOGA,
+    HIIT,
     OTHER
 }

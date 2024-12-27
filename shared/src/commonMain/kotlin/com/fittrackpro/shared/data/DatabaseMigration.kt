@@ -1,45 +1,27 @@
 package com.fittrackpro.shared.data
 
-import com.squareup.sqldelight.db.SqlDriver
+import app.cash.sqldelight.db.SqlDriver
 
 object DatabaseMigration {
+    private const val SCHEMA_VERSION = 1
+
     fun migrateIfNeeded(driver: SqlDriver) {
-        val oldVersion = driver.executeQuery(
+        val currentVersion = driver.executeQuery(
             identifier = null,
             sql = "PRAGMA user_version;",
-            mapper = { cursor -> cursor.getLong(0)?.toInt() ?: 0 },
-            parameters = 0
-        ).value
-
-        val newVersion = 1 // Increment this when adding new migrations
-
-        if (oldVersion < newVersion) {
-            driver.execute(null, "BEGIN TRANSACTION;", 0)
-            try {
-                migrate(driver, oldVersion, newVersion)
-                driver.execute(null, "PRAGMA user_version = $newVersion;", 0)
-                driver.execute(null, "COMMIT;", 0)
-            } catch (e: Exception) {
-                driver.execute(null, "ROLLBACK;", 0)
-                throw e
+            parameters = 0,
+            mapper = { cursor -> 
+                if (cursor.next()) {
+                    cursor.getLong(0)?.toInt() ?: 0
+                } else {
+                    0
+                }
             }
-        }
-    }
+        ).executeAsOne()
 
-    private fun migrate(driver: SqlDriver, oldVersion: Int, newVersion: Int) {
-        var version = oldVersion
-        while (version < newVersion) {
-            version++
-            when (version) {
-                1 -> migrateV1(driver)
-                // Add more migration cases here as needed
-            }
+        if (currentVersion < SCHEMA_VERSION) {
+            FitTrackDatabase.Schema.create(driver)
+            driver.execute(null, "PRAGMA user_version = $SCHEMA_VERSION;", 0)
         }
-    }
-
-    private fun migrateV1(driver: SqlDriver) {
-        // Add migration SQL statements here when needed
-        // Example:
-        // driver.execute(null, "ALTER TABLE workout ADD COLUMN intensity TEXT;", 0)
     }
 }

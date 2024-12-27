@@ -1,0 +1,29 @@
+import kotlin.String;
+import kotlin.Int;
+import kotlin.Double;
+
+CREATE TABLE UserProfile (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    age INTEGER NOT NULL,
+    height REAL NOT NULL,
+    weight REAL NOT NULL,
+    gender TEXT NOT NULL,
+    activity_level TEXT NOT NULL,
+    fitness_goals TEXT NOT NULL
+);
+
+getProfile:
+SELECT * FROM UserProfile LIMIT 1;
+
+upsertProfile:
+INSERT OR REPLACE INTO UserProfile (
+    id,
+    name,
+    age,
+    height,
+    weight,
+    gender,
+    activity_level,
+    fitness_goals
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);

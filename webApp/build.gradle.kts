@@ -17,12 +17,12 @@ kotlin {
                     port = 8080
                 )
             }
+            @OptIn(org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalDistributionDsl::class)
             distribution {
-                directory = File("$projectDir/build/distributions")
+                outputDirectory = File("$projectDir/build/distributions")
             }
         }
         nodejs {
-            
             binaries.executable()
         }
     }
@@ -32,10 +32,8 @@ kotlin {
             dependencies {
                 implementation(project(":shared"))
                 
-                // Kotlin Wrappers BOM
-                implementation(platform("org.jetbrains.kotlin-wrappers:kotlin-wrappers-bom:1.0.0-pre.634"))
-                
                 // Kotlin Wrappers
+                implementation(enforcedPlatform("org.jetbrains.kotlin-wrappers:kotlin-wrappers-bom:1.0.0-pre.634"))
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom")
                 implementation("org.jetbrains.kotlin-wrappers:kotlin-emotion")

@@ -23,7 +23,7 @@ actual class CommonFlow<T> actual constructor(
 }
 
 actual class CommonStateFlow<T> actual constructor(
-    private val stateFlow: StateFlow<T>
+    stateFlow: StateFlow<T>
 ) : StateFlow<T> by stateFlow {
     fun subscribe(
         coroutineScope: CoroutineScope,

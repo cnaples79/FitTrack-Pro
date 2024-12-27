@@ -1,88 +1,115 @@
 package com.fittrackpro.shared.data.repository
 
-import com.fittrackpro.db.FitTrackDatabase
+import com.fittrackpro.shared.data.FitTrackDatabase
 import com.fittrackpro.shared.domain.model.Goal
-import com.fittrackpro.shared.domain.model.GoalType
 import com.fittrackpro.shared.domain.repository.GoalRepository
-import com.squareup.sqldelight.runtime.coroutines.asFlow
-import com.squareup.sqldelight.runtime.coroutines.mapToList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.toLocalDate
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-class GoalRepositoryImpl(database: FitTrackDatabase) : GoalRepository {
-    private val queries = database.goalQueries
+class GoalRepositoryImpl(
+    private val database: FitTrackDatabase
+) : GoalRepository {
 
-    override suspend fun getGoals(): List<Goal> {
-        return queries.getAllGoals().executeAsList().map { it.toGoal() }
+    override suspend fun getGoals(): List<Goal> = withContext(Dispatchers.Default) {
+        database.goalQueries.getAllGoals().executeAsList().map { goalEntity ->
+            Goal(
+                id = goalEntity.id,
+                userId = goalEntity.user_id,
+                title = goalEntity.title,
+                description = goalEntity.description,
+                type = goalEntity.type,
+                target = goalEntity.target,
+                progress = goalEntity.progress,
+                targetDate = goalEntity.target_date,
+                startDate = goalEntity.start_date,
+                endDate = goalEntity.end_date,
+                status = goalEntity.status
+            )
+        }
     }
 
-    override suspend fun getGoal(id: String): Goal? {
-        return queries.getGoalById(id).executeAsOneOrNull()?.toGoal()
+    override suspend fun getGoal(id: String): Goal? = withContext(Dispatchers.Default) {
+        database.goalQueries.getGoalById(id.toLong()).executeAsOneOrNull()?.let { goalEntity ->
+            Goal(
+                id = goalEntity.id,
+                userId = goalEntity.user_id,
+                title = goalEntity.title,
+                description = goalEntity.description,
+                type = goalEntity.type,
+                target = goalEntity.target,
+                progress = goalEntity.progress,
+                targetDate = goalEntity.target_date,
+                startDate = goalEntity.start_date,
+                endDate = goalEntity.end_date,
+                status = goalEntity.status
+            )
+        }
     }
 
-    override suspend fun addGoal(goal: Goal) {
-        queries.insertGoal(
-            id = goal.id,
+    override suspend fun addGoal(goal: Goal) = withContext(Dispatchers.Default) {
+        database.goalQueries.insertGoal(
+            user_id = goal.userId,
             title = goal.title,
             description = goal.description,
-            target_date = goal.targetDate.toString(),
-            type = goal.type.name,
-            target = goal.target.toLong(),
-            progress = goal.progress.toLong(),
-            completed = if (goal.completed) 1L else 0L
+            type = goal.type,
+            target = goal.target,
+            progress = goal.progress,
+            target_date = goal.targetDate,
+            start_date = goal.startDate,
+            end_date = goal.endDate,
+            status = goal.status
         )
     }
 
-    override suspend fun updateGoal(goal: Goal) {
-        queries.updateGoal(
+    override suspend fun updateGoal(goal: Goal) = withContext(Dispatchers.Default) {
+        database.goalQueries.updateGoal(
             title = goal.title,
             description = goal.description,
-            target_date = goal.targetDate.toString(),
-            type = goal.type.name,
-            target = goal.target.toLong(),
-            progress = goal.progress.toLong(),
-            completed = if (goal.completed) 1L else 0L,
+            type = goal.type,
+            target = goal.target,
+            target_date = goal.targetDate,
+            end_date = goal.endDate,
+            status = goal.status,
             id = goal.id
         )
     }
 
-    override suspend fun updateGoalProgress(id: String, progress: Int, completed: Boolean) {
-        queries.updateGoalProgress(
+    override suspend fun updateGoalProgress(id: String, progress: Int, completed: Boolean) = withContext(Dispatchers.Default) {
+        database.goalQueries.updateGoalProgress(
             progress = progress.toLong(),
-            completed = if (completed) 1L else 0L,
-            id = id
+            status = if (completed) "COMPLETED" else "IN_PROGRESS",
+            id = id.toLong()
         )
     }
 
-    override suspend fun deleteGoal(id: String) {
-        queries.deleteGoal(id)
-    }
-
-    override suspend fun getActiveGoals(): List<Goal> {
-        return queries.getActiveGoals(LocalDate.now().toString())
-            .executeAsList()
-            .map { it.toGoal() }
+    override suspend fun deleteGoal(id: String) = withContext(Dispatchers.Default) {
+        database.goalQueries.deleteGoal(id.toLong())
     }
 
     override fun observeGoals(): Flow<List<Goal>> {
-        return queries.getAllGoals()
+        return database.goalQueries.getAllGoals()
             .asFlow()
-            .mapToList()
-            .map { goals -> goals.map { it.toGoal() } }
-    }
-
-    private fun com.fittrackpro.db.Goal.toGoal(): Goal {
-        return Goal(
-            id = id,
-            title = title,
-            description = description,
-            targetDate = target_date.toLocalDate(),
-            type = GoalType.valueOf(type),
-            target = target.toInt(),
-            progress = progress.toInt(),
-            completed = completed == 1L
-        )
+            .mapToList(Dispatchers.Default)
+            .map { goalEntities ->
+                goalEntities.map { goalEntity ->
+                    Goal(
+                        id = goalEntity.id,
+                        userId = goalEntity.user_id,
+                        title = goalEntity.title,
+                        description = goalEntity.description,
+                        type = goalEntity.type,
+                        target = goalEntity.target,
+                        progress = goalEntity.progress,
+                        targetDate = goalEntity.target_date,
+                        startDate = goalEntity.start_date,
+                        endDate = goalEntity.end_date,
+                        status = goalEntity.status
+                    )
+                }
+            }
     }
 }

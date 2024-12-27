@@ -1,0 +1,41 @@
+CREATE TABLE Workout (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    duration INTEGER NOT NULL,
+    calories_burned INTEGER,
+    distance REAL,
+    date INTEGER NOT NULL,
+    notes TEXT,
+    FOREIGN KEY (user_id) REFERENCES UserProfile(id)
+);
+
+getAllWorkouts:
+SELECT * FROM Workout;
+
+getWorkoutById:
+SELECT * FROM Workout WHERE id = ?;
+
+getWorkoutsByUserId:
+SELECT * FROM Workout WHERE user_id = ?;
+
+getWorkoutsByDateRange:
+SELECT * FROM Workout 
+WHERE user_id = ? 
+AND date BETWEEN ? AND ?
+ORDER BY date DESC;
+
+insertWorkout:
+INSERT INTO Workout(user_id, type, duration, calories_burned, distance, date, notes)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateWorkout:
+UPDATE Workout
+SET type = ?, duration = ?, calories_burned = ?, distance = ?, notes = ?
+WHERE id = ?;
+
+deleteWorkout:
+DELETE FROM Workout WHERE id = ?;
+
+deleteOldWorkouts:
+DELETE FROM Workout WHERE date < ?;
