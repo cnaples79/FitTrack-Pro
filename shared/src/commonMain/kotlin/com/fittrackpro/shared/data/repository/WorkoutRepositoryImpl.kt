@@ -9,12 +9,13 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import kotlinx.datetime.LocalDateTime
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class WorkoutRepositoryImpl(
     private val database: FitTrackDatabase
 ) : WorkoutRepository {
-    override suspend fun getWorkouts(): List<Workout> {
-        return database.workoutQueries.getAllWorkouts().executeAsList().map { workoutEntity ->
+    override suspend fun getWorkouts(): List<Workout> = withContext(Dispatchers.Default) {
+        database.workoutQueries.getAllWorkouts().executeAsList().map { workoutEntity ->
             Workout(
                 id = workoutEntity.id,
                 userId = workoutEntity.user_id,
@@ -28,8 +29,8 @@ class WorkoutRepositoryImpl(
         }
     }
 
-    override suspend fun getWorkout(id: String): Workout? {
-        return database.workoutQueries.getWorkoutById(id.toLong()).executeAsOneOrNull()?.let { workoutEntity ->
+    override suspend fun getWorkout(id: String): Workout? = withContext(Dispatchers.Default) {
+        database.workoutQueries.getWorkoutById(id.toLong()).executeAsOneOrNull()?.let { workoutEntity ->
             Workout(
                 id = workoutEntity.id,
                 userId = workoutEntity.user_id,
@@ -43,7 +44,7 @@ class WorkoutRepositoryImpl(
         }
     }
 
-    override suspend fun addWorkout(workout: Workout) {
+    override suspend fun addWorkout(workout: Workout) = withContext(Dispatchers.Default) {
         database.workoutQueries.insertWorkout(
             user_id = workout.userId,
             type = workout.type,
@@ -55,7 +56,7 @@ class WorkoutRepositoryImpl(
         )
     }
 
-    override suspend fun updateWorkout(workout: Workout) {
+    override suspend fun updateWorkout(workout: Workout) = withContext(Dispatchers.Default) {
         database.workoutQueries.updateWorkout(
             type = workout.type,
             duration = workout.duration,
@@ -66,12 +67,12 @@ class WorkoutRepositoryImpl(
         )
     }
 
-    override suspend fun deleteWorkout(id: String) {
+    override suspend fun deleteWorkout(id: String) = withContext(Dispatchers.Default) {
         database.workoutQueries.deleteWorkout(id.toLong())
     }
 
-    override suspend fun getWorkoutsByDateRange(start: LocalDateTime, end: LocalDateTime): List<Workout> {
-        return database.workoutQueries.getWorkoutsByDateRange(
+    override suspend fun getWorkoutsByDateRange(start: LocalDateTime, end: LocalDateTime): List<Workout> = withContext(Dispatchers.Default) {
+        database.workoutQueries.getWorkoutsByDateRange(
             user_id = 1, // TODO: Get current user ID from UserManager
             date = start.toEpochMilliseconds(),
             date_ = end.toEpochMilliseconds()

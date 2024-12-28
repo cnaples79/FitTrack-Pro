@@ -23,13 +23,13 @@ actual class CommonFlow<T> actual constructor(
 }
 
 actual class CommonStateFlow<T> actual constructor(
-    stateFlow: StateFlow<T>
-) : StateFlow<T> by stateFlow {
+    private val flow: StateFlow<T>
+) : StateFlow<T> by flow {
     fun subscribe(
         coroutineScope: CoroutineScope,
         dispatcher: CoroutineDispatcher = Dispatchers.Main,
         onCollect: (T) -> Unit
     ): Job = coroutineScope.launch(dispatcher) {
-        stateFlow.onEach(onCollect).launchIn(this)
+        flow.onEach(onCollect).launchIn(this)
     }
 }
