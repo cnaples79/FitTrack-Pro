@@ -10,9 +10,7 @@ import com.fittrackpro.shared.domain.model.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import com.fittrackpro.shared.data.repository.GoalRepositoryImpl
-import com.fittrackpro.shared.data.repository.UserProfileRepositoryImpl
-import com.fittrackpro.shared.data.repository.WorkoutRepositoryImpl
+import com.fittrackpro.shared.data.repository.RepositoryFactory
 import com.fittrackpro.shared.domain.repository.GoalRepository
 import com.fittrackpro.shared.domain.repository.UserProfileRepository
 import com.fittrackpro.shared.domain.repository.WorkoutRepository
@@ -27,14 +25,29 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
     private val databaseScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val cleaner = DatabaseCleaner(database)
 
-    val workoutRepository: WorkoutRepository = WorkoutRepositoryImpl(database)
-    val goalRepository: GoalRepository = GoalRepositoryImpl(database)
-    val userProfileRepository: UserProfileRepository = UserProfileRepositoryImpl(database)
+    private var _workoutRepository: WorkoutRepository? = null
+    private var _goalRepository: GoalRepository? = null
+    private var _userProfileRepository: UserProfileRepository? = null
 
     init {
         DatabaseMigration.migrateIfNeeded(driver)
         setupAutomaticCleanup()
     }
+
+    fun initializeRepositories(userId: Long) {
+        _workoutRepository = RepositoryFactory.createWorkoutRepository(database)
+        _goalRepository = RepositoryFactory.createGoalRepository(database, userId)
+        _userProfileRepository = RepositoryFactory.createUserProfileRepository(database)
+    }
+
+    val workoutRepository: WorkoutRepository
+        get() = _workoutRepository ?: throw IllegalStateException("Repositories not initialized. Call initializeRepositories first")
+
+    val goalRepository: GoalRepository
+        get() = _goalRepository ?: throw IllegalStateException("Repositories not initialized. Call initializeRepositories first")
+
+    val userProfileRepository: UserProfileRepository
+        get() = _userProfileRepository ?: throw IllegalStateException("Repositories not initialized. Call initializeRepositories first")
 
     private fun setupAutomaticCleanup() {
         databaseScope.launch {

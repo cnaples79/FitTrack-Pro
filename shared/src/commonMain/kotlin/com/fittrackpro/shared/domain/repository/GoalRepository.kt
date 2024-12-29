@@ -2,16 +2,51 @@ package com.fittrackpro.shared.domain.repository
 
 import com.fittrackpro.shared.domain.model.Goal
 import com.fittrackpro.shared.domain.model.GoalStatus
+import com.fittrackpro.shared.domain.model.GoalType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 
 interface GoalRepository {
-    suspend fun getGoal(id: Long): Goal?
-    suspend fun getGoalsByUserId(userId: Long): List<Goal>
-    suspend fun insertGoal(goal: Goal): Long
-    suspend fun updateGoal(goal: Goal)
-    suspend fun updateGoalProgress(id: Long, currentValue: Double, status: GoalStatus, updatedAt: LocalDate)
-    suspend fun deleteGoal(id: Long)
-    fun observeActiveGoals(userId: Long): Flow<List<Goal>>
-    fun observeCompletedGoals(userId: Long): Flow<List<Goal>>
+    fun getGoals(): Flow<List<Goal>>
+    fun getGoalById(id: Long): Flow<Goal?>
+    fun addGoal(
+        title: String,
+        description: String,
+        type: GoalType,
+        targetValue: Double,
+        deadline: LocalDate
+    ): Flow<Goal>
+    
+    fun updateGoal(
+        id: Long,
+        title: String,
+        description: String,
+        type: GoalType,
+        targetValue: Double,
+        deadline: LocalDate
+    ): Flow<Goal?>
+    
+    fun updateGoalProgress(id: Long, currentValue: Double): Flow<Goal?>
+    fun deleteGoal(id: Long): Flow<Boolean>
+    fun getGoalsByType(type: GoalType): Flow<List<Goal>>
+    fun getGoalsByStatus(status: GoalStatus): Flow<List<Goal>>
+    
+    fun addMockGoal(
+        title: String,
+        description: String,
+        type: GoalType,
+        targetValue: Double,
+        currentValue: Double,
+        deadline: LocalDate
+    ): Flow<Goal>
+    
+    fun updateMockGoal(
+        id: Long,
+        title: String,
+        description: String,
+        type: GoalType,
+        targetValue: Double,
+        currentValue: Double,
+        deadline: LocalDate
+    ): Flow<Goal?>
 }

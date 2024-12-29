@@ -29,7 +29,7 @@ CREATE INDEX IF NOT EXISTS goal_end_date_idx ON Goal(end_date);
 getGoal:
 SELECT *
 FROM Goal
-WHERE id = ?;
+WHERE id = ? AND user_id = ?;
 
 getGoalsByUserId:
 SELECT *
@@ -71,7 +71,7 @@ updateGoalProgress:
 UPDATE Goal
 SET progress = ?,
     updated_at = ?
-WHERE id = ?;
+WHERE id = ? AND user_id = ?;
 
 updateGoal:
 UPDATE Goal
@@ -84,18 +84,18 @@ SET title = ?,
     start_date = ?,
     end_date = ?,
     updated_at = ?
-WHERE id = ?;
+WHERE id = ? AND user_id = ?;
 
 updateGoalStatus:
 UPDATE Goal
 SET status = ?,
     updated_at = ?
-WHERE id = ?;
+WHERE id = ? AND user_id = ?;
 
 deleteGoal:
 DELETE FROM Goal
-WHERE id = ?;
+WHERE id = ? AND user_id = ?;
 
 deleteExpiredGoals:
 DELETE FROM Goal
-WHERE status = 'COMPLETED' AND updated_at < ?;
+WHERE status = 'COMPLETED' AND updated_at < ? AND user_id = ?;

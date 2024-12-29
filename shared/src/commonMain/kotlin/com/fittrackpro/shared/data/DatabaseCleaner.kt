@@ -5,12 +5,14 @@ import kotlinx.datetime.Clock
 import kotlin.time.Duration.Companion.days
 
 class DatabaseCleaner(private val database: FitTrackDatabase) {
-    suspend fun cleanOldRecords() {
+    suspend fun cleanOldRecords(userId: Long? = null) {
         val thirtyDaysAgo = Clock.System.now().minus(30.days).toEpochMilliseconds()
         
         database.transaction {
             database.workoutQueries.deleteOldWorkouts(thirtyDaysAgo)
-            database.goalQueries.deleteExpiredGoals(thirtyDaysAgo)
+            if (userId != null) {
+                database.goalQueries.deleteExpiredGoals(thirtyDaysAgo, userId)
+            }
         }
     }
 }

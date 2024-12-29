@@ -17,15 +17,27 @@ import org.koin.dsl.module
 fun initKoin(
     databaseDriverFactory: DatabaseDriverFactory,
     dispatchers: Dispatchers,
+    userId: Long,
     appDeclaration: KoinAppDeclaration = {}
 ) = startKoin {
     appDeclaration()
-    modules(commonModule(databaseDriverFactory, dispatchers))
+    modules(commonModule(databaseDriverFactory, dispatchers, userId))
 }
 
-fun commonModule(databaseDriverFactory: DatabaseDriverFactory, dispatchers: Dispatchers) = module {
+fun commonModule(
+    databaseDriverFactory: DatabaseDriverFactory, 
+    dispatchers: Dispatchers,
+    userId: Long
+) = module {
     single { Database(databaseDriverFactory) }
     single { dispatchers }
+    
+    // Initialize database with userId
+    single { 
+        val database = get<Database>()
+        database.initializeRepositories(userId)
+        database
+    }
     
     // Repositories
     single<UserProfileRepository> { get<Database>().userProfileRepository }

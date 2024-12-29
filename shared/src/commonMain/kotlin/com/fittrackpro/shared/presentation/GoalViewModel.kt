@@ -2,6 +2,7 @@ package com.fittrackpro.shared.presentation
 
 import com.fittrackpro.shared.domain.model.Goal
 import com.fittrackpro.shared.domain.model.GoalStatus
+import com.fittrackpro.shared.domain.model.GoalType
 import com.fittrackpro.shared.domain.repository.GoalRepository
 import com.fittrackpro.shared.util.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,7 +42,7 @@ class GoalViewModel(
         viewModelScope.launch(dispatchers.io) {
             _isLoading.value = true
             try {
-                repository.observeActiveGoals(1L).collectLatest { goals ->
+                repository.getGoals().collectLatest { goals ->
                     _goals.value = goals
                     _activeGoals.value = filterGoals(goals)
                     _error.value = null
@@ -58,10 +59,10 @@ class GoalViewModel(
         return goals.filter { goal -> goal.status != GoalStatus.COMPLETED }
     }
 
-    fun addGoal(goal: Goal) {
+    fun addGoal(title: String, description: String, type: GoalType, targetValue: Double, deadline: LocalDate) {
         viewModelScope.launch(dispatchers.io) {
             try {
-                repository.insertGoal(goal)
+                repository.addGoal(title, description, type, targetValue, deadline)
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = e.message
@@ -69,12 +70,10 @@ class GoalViewModel(
         }
     }
 
-    fun updateGoalProgress(id: Long, progress: Double, completed: Boolean) {
+    fun updateGoalProgress(id: Long, currentValue: Double) {
         viewModelScope.launch(dispatchers.io) {
             try {
-                val status = if (completed) GoalStatus.COMPLETED else GoalStatus.IN_PROGRESS
-                val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-                repository.updateGoalProgress(id, progress, status, now)
+                repository.updateGoalProgress(id, currentValue)
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = e.message
