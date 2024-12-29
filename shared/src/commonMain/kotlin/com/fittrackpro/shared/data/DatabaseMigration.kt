@@ -2,6 +2,7 @@ package com.fittrackpro.shared.data
 
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
+import com.fittrackpro.shared.FitTrackDatabase
 
 object DatabaseMigration {
     private const val SCHEMA_VERSION = 1

@@ -55,7 +55,7 @@ class GoalViewModel(
     }
 
     private fun filterGoals(goals: List<Goal>): List<Goal> {
-        return goals.filter { goal -> goal.status != GoalStatus.COMPLETED.name }
+        return goals.filter { goal -> goal.status != GoalStatus.COMPLETED }
     }
 
     fun addGoal(goal: Goal) {

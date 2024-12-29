@@ -64,9 +64,25 @@ INSERT INTO Goal (
     updated_at
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
+lastInsertRowId:
+SELECT last_insert_rowid();
+
 updateGoalProgress:
 UPDATE Goal
 SET progress = ?,
+    updated_at = ?
+WHERE id = ?;
+
+updateGoal:
+UPDATE Goal
+SET title = ?,
+    description = ?,
+    type = ?,
+    target = ?,
+    progress = ?,
+    status = ?,
+    start_date = ?,
+    end_date = ?,
     updated_at = ?
 WHERE id = ?;
 
@@ -80,7 +96,6 @@ deleteGoal:
 DELETE FROM Goal
 WHERE id = ?;
 
-deleteOldCompletedGoals:
+deleteExpiredGoals:
 DELETE FROM Goal
-WHERE status = ?
-AND updated_at < ?;
+WHERE status = 'COMPLETED' AND updated_at < ?;

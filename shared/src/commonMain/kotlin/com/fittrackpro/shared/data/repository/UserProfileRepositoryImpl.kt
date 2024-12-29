@@ -1,13 +1,13 @@
 package com.fittrackpro.shared.data.repository
 
-import com.fittrackpro.shared.data.FitTrackDatabase
+import com.fittrackpro.shared.FitTrackDatabase
 import com.fittrackpro.shared.domain.model.UserProfile
 import com.fittrackpro.shared.domain.repository.UserProfileRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToOneOrNull
-import kotlinx.coroutines.Dispatchers
 
 class UserProfileRepositoryImpl(
     private val database: FitTrackDatabase
@@ -59,16 +59,16 @@ class UserProfileRepositoryImpl(
             .asFlow()
             .mapToOneOrNull(Dispatchers.Default)
             .map { profile ->
-                profile?.let {
+                profile?.let { p ->
                     UserProfile(
-                        id = it.id,
-                        name = it.name,
-                        age = it.age.toInt(),
-                        height = it.height,
-                        weight = it.weight,
-                        gender = it.gender,
-                        activityLevel = it.activity_level,
-                        fitnessGoals = it.fitness_goals
+                        id = p.id,
+                        name = p.name,
+                        age = p.age.toInt(),
+                        height = p.height,
+                        weight = p.weight,
+                        gender = p.gender,
+                        activityLevel = p.activity_level,
+                        fitnessGoals = p.fitness_goals
                     )
                 }
             }

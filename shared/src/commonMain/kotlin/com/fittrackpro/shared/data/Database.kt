@@ -10,19 +10,15 @@ import com.fittrackpro.shared.domain.model.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-
 import com.fittrackpro.shared.data.repository.GoalRepositoryImpl
 import com.fittrackpro.shared.data.repository.UserProfileRepositoryImpl
 import com.fittrackpro.shared.data.repository.WorkoutRepositoryImpl
 import com.fittrackpro.shared.domain.repository.GoalRepository
 import com.fittrackpro.shared.domain.repository.UserProfileRepository
 import com.fittrackpro.shared.domain.repository.WorkoutRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.days
 
 class Database(databaseDriverFactory: DatabaseDriverFactory) {

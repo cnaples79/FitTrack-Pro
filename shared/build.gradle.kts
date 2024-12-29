@@ -87,7 +87,8 @@ sqldelight {
         create("FitTrackDatabase") {
             packageName.set("com.fittrackpro.shared")
             dialect("app.cash.sqldelight:sqlite-3-24-dialect:2.0.0")
-            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+            srcDirs("src/commonMain/sqldelight")
+            deriveSchemaFromMigrations.set(true)
             verifyMigrations.set(true)
         }
     }

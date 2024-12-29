@@ -10,9 +10,7 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOneOrNull
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.coroutines.Dispatchers
 
 class GoalRepositoryImpl(
     private val database: FitTrackDatabase
@@ -70,7 +68,22 @@ class GoalRepositoryImpl(
             created_at = goal.createdAt.toEpochDays().toLong(),
             updated_at = goal.updatedAt.toEpochDays().toLong()
         )
-        return database.goalQueries.getGoal(database.goalQueries.lastInsertRowId().executeAsOne()).executeAsOne().id
+        return database.goalQueries.lastInsertRowId().executeAsOne()
+    }
+
+    override suspend fun updateGoal(goal: Goal) {
+        database.goalQueries.updateGoal(
+            title = goal.title,
+            description = goal.description,
+            type = goal.type,
+            target = goal.targetValue,
+            progress = goal.currentValue,
+            status = goal.status,
+            start_date = goal.startDate.toEpochDays().toLong(),
+            end_date = goal.endDate.toEpochDays().toLong(),
+            updated_at = goal.updatedAt.toEpochDays().toLong(),
+            id = goal.id
+        )
     }
 
     override suspend fun updateGoalProgress(id: Long, currentValue: Double, status: GoalStatus, updatedAt: LocalDate) {
@@ -81,7 +94,7 @@ class GoalRepositoryImpl(
         )
         
         database.goalQueries.updateGoalStatus(
-            status = status.name,
+            status = status,
             updated_at = updatedAt.toEpochDays().toLong(),
             id = id
         )
@@ -94,7 +107,7 @@ class GoalRepositoryImpl(
     override fun observeActiveGoals(userId: Long): Flow<List<Goal>> {
         return database.goalQueries.getActiveGoals(userId)
             .asFlow()
-            .mapToList()
+            .mapToList(Dispatchers.Default)
             .map { goals ->
                 goals.map { goal ->
                     Goal(
@@ -118,7 +131,7 @@ class GoalRepositoryImpl(
     override fun observeCompletedGoals(userId: Long): Flow<List<Goal>> {
         return database.goalQueries.getCompletedGoals(userId)
             .asFlow()
-            .mapToList()
+            .mapToList(Dispatchers.Default)
             .map { goals ->
                 goals.map { goal ->
                     Goal(
