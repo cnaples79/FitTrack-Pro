@@ -1,5 +1,6 @@
 package com.fittrackpro.shared.data.repository
 
+import GoalRepositoryImpl
 import com.fittrackpro.shared.FitTrackDatabase
 import com.fittrackpro.shared.domain.repository.GoalRepository
 import com.fittrackpro.shared.domain.repository.UserProfileRepository
