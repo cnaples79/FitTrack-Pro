@@ -1,7 +1,7 @@
 plugins {
     kotlin("multiplatform")
     id("com.android.library")
-    id("app.cash.sqldelight")
+    id("app.cash.sqldelight") version "2.0.0"
     kotlin("plugin.serialization") version "1.9.20"
 }
 
@@ -21,6 +21,7 @@ kotlin {
     ).forEach {
         it.binaries.framework {
             baseName = "shared"
+            isStatic = true
         }
     }
 
@@ -32,21 +33,12 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                // SQLDelight
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
                 implementation("app.cash.sqldelight:runtime:2.0.0")
                 implementation("app.cash.sqldelight:coroutines-extensions:2.0.0")
-                
-                // Koin
-                api("io.insert-koin:koin-core:3.5.0")
-                
-                // Coroutines
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-                
-                // DateTime
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
-                
-                // Serialization
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+                implementation("io.insert-koin:koin-core:3.5.0")
             }
         }
         
@@ -65,21 +57,14 @@ kotlin {
             iosX64Main.dependsOn(this)
             iosArm64Main.dependsOn(this)
             iosSimulatorArm64Main.dependsOn(this)
-            
             dependencies {
                 implementation("app.cash.sqldelight:native-driver:2.0.0")
             }
         }
-        
+
         val jsMain by getting {
             dependencies {
                 implementation("app.cash.sqldelight:web-worker-driver:2.0.0")
-            }
-        }
-        
-        val commonTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
             }
         }
     }
@@ -89,7 +74,7 @@ android {
     namespace = "com.fittrackpro.shared"
     compileSdk = 34
     defaultConfig {
-        minSdk = 26
+        minSdk = 24
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -100,8 +85,10 @@ android {
 sqldelight {
     databases {
         create("FitTrackDatabase") {
-            packageName.set("com.fittrackpro.shared.data")
+            packageName.set("com.fittrackpro.shared")
             dialect("app.cash.sqldelight:sqlite-3-24-dialect:2.0.0")
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+            verifyMigrations.set(true)
         }
     }
 }

@@ -16,9 +16,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.fittrackpro.android.ui.viewmodels.GoalViewModel
 import com.fittrackpro.shared.domain.model.Goal
+import com.fittrackpro.shared.domain.model.GoalStatus
 import com.fittrackpro.shared.domain.model.GoalType
 import kotlinx.datetime.*
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,15 +29,13 @@ fun AddGoalScreen(
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var target by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf(GoalType.WORKOUT_COUNT) }
-    var targetDate by remember { 
-        mutableStateOf(
-            Clock.System.now()
-                .plus(30, DateTimeUnit.DAY)
-                .toLocalDateTime(TimeZone.currentSystemDefault())
-                .date
-        ) 
-    }
+    var goalType by remember { mutableStateOf(GoalType.WORKOUT_COUNT) }
+    var targetDate by remember { mutableStateOf(
+        Clock.System.now()
+            .plus(30, DateTimeUnit.DAY, TimeZone.currentSystemDefault())
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+            .date
+    ) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
 
@@ -87,7 +85,7 @@ fun AddGoalScreen(
                 onExpandedChange = { }
             ) {
                 OutlinedTextField(
-                    value = selectedType.name.replace("_", " "),
+                    value = goalType.name.replace("_", " "),
                     onValueChange = { },
                     readOnly = true,
                     label = { Text("Goal Type") },
@@ -102,7 +100,7 @@ fun AddGoalScreen(
                     GoalType.values().forEach { type ->
                         DropdownMenuItem(
                             text = { Text(type.name.replace("_", " ")) },
-                            onClick = { selectedType = type }
+                            onClick = { goalType = type }
                         )
                     }
                 }
@@ -113,7 +111,7 @@ fun AddGoalScreen(
                 onValueChange = { target = it },
                 label = { 
                     Text(
-                        when (selectedType) {
+                        when (goalType) {
                             GoalType.WORKOUT_COUNT -> "Number of Workouts"
                             GoalType.WORKOUT_MINUTES -> "Total Minutes"
                             GoalType.CALORIE_BURN -> "Total Calories"
@@ -156,22 +154,27 @@ fun AddGoalScreen(
                     }
 
                     val goal = Goal(
-                        id = UUID.randomUUID().toString(),
+                        id = 0L, // This will be set by SQLDelight
+                        userId = 1L, // Using default user ID
                         title = title,
                         description = description,
-                        targetDate = targetDate,
-                        type = selectedType,
-                        target = target.toIntOrNull() ?: 0,
-                        progress = 0,
-                        completed = false
+                        type = goalType,
+                        targetValue = target.toDoubleOrNull() ?: 0.0,
+                        currentValue = 0.0,
+                        status = GoalStatus.IN_PROGRESS,
+                        startDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
+                        endDate = Clock.System.now()
+                            .plus(30, DateTimeUnit.DAY, TimeZone.currentSystemDefault())
+                            .toLocalDateTime(TimeZone.currentSystemDefault()).date,
+                        createdAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
+                        updatedAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
                     )
-
                     viewModel.addGoal(goal)
-                    navController.navigateUp()
+                    navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Create Goal")
+                Text("Add Goal")
             }
         }
     }

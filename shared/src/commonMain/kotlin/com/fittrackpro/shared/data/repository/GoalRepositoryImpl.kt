@@ -1,113 +1,139 @@
 package com.fittrackpro.shared.data.repository
 
-import com.fittrackpro.shared.data.FitTrackDatabase
+import com.fittrackpro.shared.FitTrackDatabase
 import com.fittrackpro.shared.domain.model.Goal
+import com.fittrackpro.shared.domain.model.GoalStatus
 import com.fittrackpro.shared.domain.repository.GoalRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import app.cash.sqldelight.coroutines.mapToOneOrNull
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 class GoalRepositoryImpl(
     private val database: FitTrackDatabase
 ) : GoalRepository {
-
-    override suspend fun getGoals(): List<Goal> = withContext(Dispatchers.Default) {
-        database.goalQueries.getAllGoals().executeAsList().map { goalEntity ->
+    override suspend fun getGoal(id: Long): Goal? {
+        return database.goalQueries.getGoal(id).executeAsOneOrNull()?.let { goal ->
             Goal(
-                id = goalEntity.id,
-                userId = goalEntity.user_id,
-                title = goalEntity.title,
-                description = goalEntity.description,
-                type = goalEntity.type,
-                target = goalEntity.target,
-                progress = goalEntity.progress,
-                targetDate = goalEntity.target_date,
-                startDate = goalEntity.start_date,
-                endDate = goalEntity.end_date,
-                status = goalEntity.status
+                id = goal.id,
+                userId = goal.user_id,
+                title = goal.title,
+                description = goal.description ?: "",
+                type = goal.type,
+                targetValue = goal.target,
+                currentValue = goal.progress,
+                status = goal.status,
+                startDate = LocalDate.fromEpochDays(goal.start_date.toInt()),
+                endDate = LocalDate.fromEpochDays(goal.end_date.toInt()),
+                createdAt = LocalDate.fromEpochDays(goal.created_at.toInt()),
+                updatedAt = LocalDate.fromEpochDays(goal.updated_at.toInt())
             )
         }
     }
 
-    override suspend fun getGoal(id: String): Goal? = withContext(Dispatchers.Default) {
-        database.goalQueries.getGoalById(id.toLong()).executeAsOneOrNull()?.let { goalEntity ->
+    override suspend fun getGoalsByUserId(userId: Long): List<Goal> {
+        return database.goalQueries.getGoalsByUserId(userId).executeAsList().map { goal ->
             Goal(
-                id = goalEntity.id,
-                userId = goalEntity.user_id,
-                title = goalEntity.title,
-                description = goalEntity.description,
-                type = goalEntity.type,
-                target = goalEntity.target,
-                progress = goalEntity.progress,
-                targetDate = goalEntity.target_date,
-                startDate = goalEntity.start_date,
-                endDate = goalEntity.end_date,
-                status = goalEntity.status
+                id = goal.id,
+                userId = goal.user_id,
+                title = goal.title,
+                description = goal.description ?: "",
+                type = goal.type,
+                targetValue = goal.target,
+                currentValue = goal.progress,
+                status = goal.status,
+                startDate = LocalDate.fromEpochDays(goal.start_date.toInt()),
+                endDate = LocalDate.fromEpochDays(goal.end_date.toInt()),
+                createdAt = LocalDate.fromEpochDays(goal.created_at.toInt()),
+                updatedAt = LocalDate.fromEpochDays(goal.updated_at.toInt())
             )
         }
     }
 
-    override suspend fun addGoal(goal: Goal) = withContext(Dispatchers.Default) {
+    override suspend fun insertGoal(goal: Goal): Long {
         database.goalQueries.insertGoal(
             user_id = goal.userId,
             title = goal.title,
             description = goal.description,
             type = goal.type,
-            target = goal.target,
-            progress = goal.progress,
-            target_date = goal.targetDate,
-            start_date = goal.startDate,
-            end_date = goal.endDate,
-            status = goal.status
-        )
-    }
-
-    override suspend fun updateGoal(goal: Goal) = withContext(Dispatchers.Default) {
-        database.goalQueries.updateGoal(
-            title = goal.title,
-            description = goal.description,
-            type = goal.type,
-            target = goal.target,
-            target_date = goal.targetDate,
-            end_date = goal.endDate,
+            target = goal.targetValue,
+            progress = goal.currentValue,
+            target_date = goal.startDate.toEpochDays().toLong(),
+            start_date = goal.startDate.toEpochDays().toLong(),
+            end_date = goal.endDate.toEpochDays().toLong(),
             status = goal.status,
-            id = goal.id
+            created_at = goal.createdAt.toEpochDays().toLong(),
+            updated_at = goal.updatedAt.toEpochDays().toLong()
         )
+        return database.goalQueries.getGoal(database.goalQueries.lastInsertRowId().executeAsOne()).executeAsOne().id
     }
 
-    override suspend fun updateGoalProgress(id: String, progress: Int, completed: Boolean) = withContext(Dispatchers.Default) {
+    override suspend fun updateGoalProgress(id: Long, currentValue: Double, status: GoalStatus, updatedAt: LocalDate) {
         database.goalQueries.updateGoalProgress(
-            progress = progress.toLong(),
-            status = if (completed) "COMPLETED" else "IN_PROGRESS",
-            id = id.toLong()
+            progress = currentValue,
+            updated_at = updatedAt.toEpochDays().toLong(),
+            id = id
+        )
+        
+        database.goalQueries.updateGoalStatus(
+            status = status.name,
+            updated_at = updatedAt.toEpochDays().toLong(),
+            id = id
         )
     }
 
-    override suspend fun deleteGoal(id: String) = withContext(Dispatchers.Default) {
-        database.goalQueries.deleteGoal(id.toLong())
+    override suspend fun deleteGoal(id: Long) {
+        database.goalQueries.deleteGoal(id)
     }
 
-    override fun observeGoals(): Flow<List<Goal>> {
-        return database.goalQueries.getAllGoals()
+    override fun observeActiveGoals(userId: Long): Flow<List<Goal>> {
+        return database.goalQueries.getActiveGoals(userId)
             .asFlow()
-            .mapToList(Dispatchers.Default)
-            .map { goalEntities ->
-                goalEntities.map { goalEntity ->
+            .mapToList()
+            .map { goals ->
+                goals.map { goal ->
                     Goal(
-                        id = goalEntity.id,
-                        userId = goalEntity.user_id,
-                        title = goalEntity.title,
-                        description = goalEntity.description,
-                        type = goalEntity.type,
-                        target = goalEntity.target,
-                        progress = goalEntity.progress,
-                        targetDate = goalEntity.target_date,
-                        startDate = goalEntity.start_date,
-                        endDate = goalEntity.end_date,
-                        status = goalEntity.status
+                        id = goal.id,
+                        userId = goal.user_id,
+                        title = goal.title,
+                        description = goal.description ?: "",
+                        type = goal.type,
+                        targetValue = goal.target,
+                        currentValue = goal.progress,
+                        status = goal.status,
+                        startDate = LocalDate.fromEpochDays(goal.start_date.toInt()),
+                        endDate = LocalDate.fromEpochDays(goal.end_date.toInt()),
+                        createdAt = LocalDate.fromEpochDays(goal.created_at.toInt()),
+                        updatedAt = LocalDate.fromEpochDays(goal.updated_at.toInt())
+                    )
+                }
+            }
+    }
+
+    override fun observeCompletedGoals(userId: Long): Flow<List<Goal>> {
+        return database.goalQueries.getCompletedGoals(userId)
+            .asFlow()
+            .mapToList()
+            .map { goals ->
+                goals.map { goal ->
+                    Goal(
+                        id = goal.id,
+                        userId = goal.user_id,
+                        title = goal.title,
+                        description = goal.description ?: "",
+                        type = goal.type,
+                        targetValue = goal.target,
+                        currentValue = goal.progress,
+                        status = goal.status,
+                        startDate = LocalDate.fromEpochDays(goal.start_date.toInt()),
+                        endDate = LocalDate.fromEpochDays(goal.end_date.toInt()),
+                        createdAt = LocalDate.fromEpochDays(goal.created_at.toInt()),
+                        updatedAt = LocalDate.fromEpochDays(goal.updated_at.toInt())
                     )
                 }
             }

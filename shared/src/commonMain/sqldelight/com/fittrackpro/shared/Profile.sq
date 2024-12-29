@@ -1,0 +1,41 @@
+import kotlin.String;
+import kotlin.collections.List;
+import com.fittrackpro.shared.domain.model.Gender;
+import com.fittrackpro.shared.domain.model.FitnessLevel;
+import com.fittrackpro.shared.domain.model.ActivityLevel;
+import com.fittrackpro.shared.domain.model.WorkoutType;
+
+CREATE TABLE IF NOT EXISTS Profile (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    email TEXT NOT NULL,
+    name TEXT NOT NULL,
+    gender TEXT AS Gender NOT NULL,
+    fitnessLevel TEXT AS FitnessLevel NOT NULL,
+    activityLevel TEXT AS ActivityLevel NOT NULL,
+    weeklyGoal INTEGER NOT NULL,
+    preferredWorkoutTypes TEXT AS List<WorkoutType> NOT NULL,
+    fitnessGoals TEXT AS List<String> NOT NULL
+);
+
+getProfile:
+SELECT *
+FROM Profile
+WHERE id = ?;
+
+observeProfile:
+SELECT *
+FROM Profile
+WHERE id = ?;
+
+upsertProfile:
+INSERT OR REPLACE INTO Profile (
+    id,
+    email,
+    name,
+    gender,
+    fitnessLevel,
+    activityLevel,
+    weeklyGoal,
+    preferredWorkoutTypes,
+    fitnessGoals
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);

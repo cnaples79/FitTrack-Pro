@@ -5,32 +5,16 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Goal(
-    val id: Long,
+    val id: Long = 0,
     val userId: Long,
     val title: String,
     val description: String,
-    val type: String,
-    val target: Long,
-    val progress: Long = 0,
-    val targetDate: Long,
-    val startDate: Long,
-    val endDate: Long,
-    val status: String
+    val type: GoalType,
+    val targetValue: Double,
+    val currentValue: Double = 0.0,
+    val status: GoalStatus = GoalStatus.NOT_STARTED,
+    val startDate: LocalDate,
+    val endDate: LocalDate,
+    val createdAt: LocalDate,
+    val updatedAt: LocalDate
 )
-
-@Serializable
-enum class GoalType {
-    STEPS,
-    DISTANCE,
-    CALORIES,
-    WORKOUT_MINUTES,
-    CUSTOM
-}
-
-@Serializable
-enum class GoalStatus {
-    NOT_STARTED,
-    IN_PROGRESS,
-    COMPLETED,
-    FAILED
-}

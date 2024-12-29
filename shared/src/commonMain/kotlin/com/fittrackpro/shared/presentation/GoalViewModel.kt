@@ -1,6 +1,7 @@
 package com.fittrackpro.shared.presentation
 
 import com.fittrackpro.shared.domain.model.Goal
+import com.fittrackpro.shared.domain.model.GoalStatus
 import com.fittrackpro.shared.domain.repository.GoalRepository
 import com.fittrackpro.shared.util.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,6 +11,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 class GoalViewModel(
     private val repository: GoalRepository,
@@ -36,9 +41,9 @@ class GoalViewModel(
         viewModelScope.launch(dispatchers.io) {
             _isLoading.value = true
             try {
-                repository.observeGoals().collectLatest { goals ->
+                repository.observeActiveGoals(1L).collectLatest { goals ->
                     _goals.value = goals
-                    _activeGoals.value = goals.filter { it.status != "COMPLETED" }
+                    _activeGoals.value = filterGoals(goals)
                     _error.value = null
                 }
             } catch (e: Exception) {
@@ -49,10 +54,14 @@ class GoalViewModel(
         }
     }
 
+    private fun filterGoals(goals: List<Goal>): List<Goal> {
+        return goals.filter { goal -> goal.status != GoalStatus.COMPLETED.name }
+    }
+
     fun addGoal(goal: Goal) {
         viewModelScope.launch(dispatchers.io) {
             try {
-                repository.addGoal(goal)
+                repository.insertGoal(goal)
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = e.message
@@ -60,21 +69,12 @@ class GoalViewModel(
         }
     }
 
-    fun updateGoal(goal: Goal) {
+    fun updateGoalProgress(id: Long, progress: Double, completed: Boolean) {
         viewModelScope.launch(dispatchers.io) {
             try {
-                repository.updateGoal(goal)
-                _error.value = null
-            } catch (e: Exception) {
-                _error.value = e.message
-            }
-        }
-    }
-
-    fun updateGoalProgress(id: Long, progress: Int, completed: Boolean) {
-        viewModelScope.launch(dispatchers.io) {
-            try {
-                repository.updateGoalProgress(id.toString(), progress, completed)
+                val status = if (completed) GoalStatus.COMPLETED else GoalStatus.IN_PROGRESS
+                val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                repository.updateGoalProgress(id, progress, status, now)
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = e.message
@@ -85,7 +85,7 @@ class GoalViewModel(
     fun deleteGoal(id: Long) {
         viewModelScope.launch(dispatchers.io) {
             try {
-                repository.deleteGoal(id.toString())
+                repository.deleteGoal(id)
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = e.message

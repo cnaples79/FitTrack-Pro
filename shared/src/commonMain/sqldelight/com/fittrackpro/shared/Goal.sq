@@ -1,0 +1,81 @@
+import kotlin.String;
+import kotlin.Boolean;
+import kotlin.Long;
+import kotlin.Double;
+import kotlinx.datetime.LocalDate;
+import com.fittrackpro.shared.domain.model.GoalType;
+import com.fittrackpro.shared.domain.model.GoalStatus;
+
+CREATE TABLE IF NOT EXISTS Goal (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    type TEXT AS GoalType NOT NULL,
+    target REAL NOT NULL,
+    progress REAL NOT NULL DEFAULT 0,
+    target_date INTEGER NOT NULL,
+    start_date INTEGER NOT NULL,
+    end_date INTEGER NOT NULL,
+    status TEXT AS GoalStatus NOT NULL DEFAULT 'IN_PROGRESS',
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES Profile(id)
+);
+
+CREATE INDEX IF NOT EXISTS goal_user_id_idx ON Goal(user_id);
+CREATE INDEX IF NOT EXISTS goal_end_date_idx ON Goal(end_date);
+
+getGoal:
+SELECT *
+FROM Goal
+WHERE id = ?;
+
+getGoalsByUserId:
+SELECT *
+FROM Goal
+WHERE user_id = ?;
+
+getActiveGoals:
+SELECT *
+FROM Goal
+WHERE user_id = ? AND status != 'COMPLETED'
+ORDER BY start_date DESC;
+
+getCompletedGoals:
+SELECT *
+FROM Goal
+WHERE user_id = ? AND status = 'COMPLETED'
+ORDER BY end_date DESC;
+
+insertGoal:
+INSERT INTO Goal (
+    user_id,
+    title,
+    description,
+    type,
+    target,
+    progress,
+    target_date,
+    start_date,
+    end_date,
+    status,
+    created_at,
+    updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateGoalProgress:
+UPDATE Goal
+SET progress = ?,
+    updated_at = ?
+WHERE id = ?;
+
+updateGoalStatus:
+UPDATE Goal
+SET status = ?,
+    updated_at = ?
+WHERE id = ?;
+
+deleteGoal:
+DELETE FROM Goal
+WHERE id = ?;

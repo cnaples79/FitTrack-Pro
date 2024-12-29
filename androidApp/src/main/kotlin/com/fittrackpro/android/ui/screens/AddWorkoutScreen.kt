@@ -19,7 +19,6 @@ import com.fittrackpro.shared.domain.model.WorkoutType
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,11 +26,12 @@ fun AddWorkoutScreen(
     navController: NavController,
     viewModel: WorkoutViewModel = viewModel()
 ) {
-    var name by remember { mutableStateOf("") }
+    var workoutType by remember { mutableStateOf(WorkoutType.CARDIO) }
     var duration by remember { mutableStateOf("") }
-    var calories by remember { mutableStateOf("") }
+    var caloriesBurned by remember { mutableStateOf("") }
+    var distance by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf(WorkoutType.CARDIO) }
+    var date by remember { mutableStateOf(Clock.System.now()) }
     var showError by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -59,26 +59,18 @@ fun AddWorkoutScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Workout Name") },
+                value = workoutType.name,
+                onValueChange = { },
+                label = { Text("Workout Type") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) }
             )
 
             ExposedDropdownMenuBox(
                 expanded = false,
                 onExpandedChange = { }
             ) {
-                OutlinedTextField(
-                    value = selectedType.name,
-                    onValueChange = { },
-                    readOnly = true,
-                    label = { Text("Workout Type") },
-                    modifier = Modifier.fillMaxWidth(),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) }
-                )
-
                 ExposedDropdownMenu(
                     expanded = false,
                     onDismissRequest = { }
@@ -86,7 +78,7 @@ fun AddWorkoutScreen(
                     WorkoutType.values().forEach { type ->
                         DropdownMenuItem(
                             text = { Text(type.name) },
-                            onClick = { selectedType = type }
+                            onClick = { workoutType = type }
                         )
                     }
                 }
@@ -102,10 +94,18 @@ fun AddWorkoutScreen(
             )
 
             OutlinedTextField(
-                value = calories,
-                onValueChange = { calories = it },
+                value = caloriesBurned,
+                onValueChange = { caloriesBurned = it },
                 label = { Text("Calories Burned") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = distance,
+                onValueChange = { distance = it },
+                label = { Text("Distance") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -129,27 +129,28 @@ fun AddWorkoutScreen(
 
             Button(
                 onClick = {
-                    if (name.isBlank() || duration.isBlank() || calories.isBlank()) {
+                    if (duration.isBlank() || caloriesBurned.isBlank()) {
                         showError = true
                         return@Button
                     }
                     
                     val workout = Workout(
-                        id = UUID.randomUUID().toString(),
-                        name = name,
-                        type = selectedType,
-                        duration = duration.toIntOrNull() ?: 0,
-                        caloriesBurned = calories.toIntOrNull() ?: 0,
-                        date = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
+                        id = 0L, // New workout, ID will be assigned by the database
+                        userId = 1L, // TODO: Get from auth
+                        type = workoutType.name,
+                        duration = duration.toLongOrNull() ?: 0L,
+                        caloriesBurned = caloriesBurned.toLongOrNull(),
+                        distance = distance.toDoubleOrNull(),
+                        date = date.toEpochMilliseconds(),
                         notes = notes.takeIf { it.isNotBlank() }
                     )
                     
                     viewModel.addWorkout(workout)
-                    navController.navigateUp()
+                    navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save Workout")
+                Text("Add Workout")
             }
         }
     }

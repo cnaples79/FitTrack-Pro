@@ -16,122 +16,90 @@ import com.fittrackpro.shared.domain.model.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileDialog(
-    profile: UserProfile,
-    onDismiss: () -> Unit,
-    onSave: (UserProfile) -> Unit
+    onDismissRequest: () -> Unit,
+    profile: Profile,
+    onSave: (Profile) -> Unit
 ) {
-    var name by remember { mutableStateOf(profile.name) }
     var email by remember { mutableStateOf(profile.email) }
-    var height by remember { mutableStateOf(profile.height?.toString() ?: "") }
-    var weight by remember { mutableStateOf(profile.weight?.toString() ?: "") }
-    var age by remember { mutableStateOf(profile.age?.toString() ?: "") }
-    var gender by remember { mutableStateOf(profile.gender ?: Gender.PREFER_NOT_TO_SAY) }
+    var name by remember { mutableStateOf(profile.name) }
+    var gender by remember { mutableStateOf(profile.gender) }
     var fitnessLevel by remember { mutableStateOf(profile.fitnessLevel) }
     var weeklyGoal by remember { mutableStateOf(profile.weeklyGoal.toString()) }
-    var selectedWorkoutTypes by remember { mutableStateOf(profile.preferredWorkoutTypes.toSet()) }
-    var showError by remember { mutableStateOf(false) }
+    var preferredWorkoutTypes by remember { mutableStateOf(profile.preferredWorkoutTypes) }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .padding(16.dp),
-            shape = MaterialTheme.shapes.large,
-            tonalElevation = 2.dp
-        ) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text("Edit Profile") },
+        text = {
             Column(
                 modifier = Modifier
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "Edit Profile",
-                    style = MaterialTheme.typography.headlineSmall
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ExposedDropdownMenuBox(
+                    expanded = false,
+                    onExpandedChange = { }
                 ) {
                     OutlinedTextField(
-                        value = height,
-                        onValueChange = { height = it },
-                        label = { Text("Height (cm)") },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true
+                        value = gender.name,
+                        onValueChange = { },
+                        readOnly = true,
+                        label = { Text("Gender") },
+                        modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) }
                     )
 
-                    OutlinedTextField(
-                        value = weight,
-                        onValueChange = { weight = it },
-                        label = { Text("Weight (kg)") },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true
-                    )
-                }
-
-                OutlinedTextField(
-                    value = age,
-                    onValueChange = { age = it },
-                    label = { Text("Age") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
-                )
-
-                Text(
-                    text = "Gender",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Gender.values().forEach { genderOption ->
-                        FilterChip(
-                            selected = gender == genderOption,
-                            onClick = { gender = genderOption },
-                            label = { Text(genderOption.name.lowercase().capitalize()) }
-                        )
+                    ExposedDropdownMenu(
+                        expanded = false,
+                        onDismissRequest = { }
+                    ) {
+                        Gender.values().forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type.name) },
+                                onClick = { gender = type }
+                            )
+                        }
                     }
                 }
 
-                Text(
-                    text = "Fitness Level",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ExposedDropdownMenuBox(
+                    expanded = false,
+                    onExpandedChange = { }
                 ) {
-                    FitnessLevel.values().forEach { level ->
-                        FilterChip(
-                            selected = fitnessLevel == level,
-                            onClick = { fitnessLevel = level },
-                            label = { Text(level.name.lowercase().capitalize()) }
-                        )
+                    OutlinedTextField(
+                        value = fitnessLevel.name,
+                        onValueChange = { },
+                        readOnly = true,
+                        label = { Text("Fitness Level") },
+                        modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) }
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = false,
+                        onDismissRequest = { }
+                    ) {
+                        FitnessLevel.values().forEach { level ->
+                            DropdownMenuItem(
+                                text = { Text(level.name) },
+                                onClick = { fitnessLevel = level }
+                            )
+                        }
                     }
                 }
 
@@ -139,78 +107,56 @@ fun EditProfileDialog(
                     value = weeklyGoal,
                     onValueChange = { weeklyGoal = it },
                     label = { Text("Weekly Workout Goal") },
-                    modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-                Text(
-                    text = "Preferred Workout Types",
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Text("Preferred Workout Types")
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     WorkoutType.values().forEach { type ->
                         FilterChip(
-                            selected = selectedWorkoutTypes.contains(type),
+                            selected = type in preferredWorkoutTypes,
                             onClick = {
-                                selectedWorkoutTypes = if (selectedWorkoutTypes.contains(type)) {
-                                    selectedWorkoutTypes - type
+                                preferredWorkoutTypes = if (type in preferredWorkoutTypes) {
+                                    preferredWorkoutTypes - type
                                 } else {
-                                    selectedWorkoutTypes + type
+                                    preferredWorkoutTypes + type
                                 }
                             },
-                            label = { Text(type.name.lowercase().capitalize()) }
+                            label = { Text(type.name) }
                         )
                     }
                 }
-
-                if (showError) {
-                    Text(
-                        text = "Please fill in all required fields",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onSave(
+                        profile.copy(
+                            email = email,
+                            name = name,
+                            gender = gender,
+                            fitnessLevel = fitnessLevel,
+                            weeklyGoal = weeklyGoal.toIntOrNull() ?: 0,
+                            preferredWorkoutTypes = preferredWorkoutTypes
+                        )
                     )
+                    onDismissRequest()
                 }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancel")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            if (name.isBlank() || email.isBlank()) {
-                                showError = true
-                                return@Button
-                            }
-
-                            val updatedProfile = profile.copy(
-                                name = name,
-                                email = email,
-                                height = height.toDoubleOrNull(),
-                                weight = weight.toDoubleOrNull(),
-                                age = age.toIntOrNull(),
-                                gender = gender,
-                                fitnessLevel = fitnessLevel,
-                                weeklyGoal = weeklyGoal.toIntOrNull() ?: 3,
-                                preferredWorkoutTypes = selectedWorkoutTypes.toList()
-                            )
-                            onSave(updatedProfile)
-                        }
-                    ) {
-                        Text("Save")
-                    }
-                }
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text("Cancel")
             }
         }
-    }
+    )
 }
 
 @Composable

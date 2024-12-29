@@ -13,15 +13,3 @@ data class Workout(
     val date: Long,
     val notes: String?
 )
-
-@Serializable
-enum class WorkoutType {
-    RUNNING,
-    CYCLING,
-    SWIMMING,
-    WALKING,
-    STRENGTH,
-    YOGA,
-    HIIT,
-    OTHER
-}
