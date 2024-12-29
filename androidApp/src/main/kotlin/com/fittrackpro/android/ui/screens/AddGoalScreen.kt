@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -15,6 +16,7 @@ import com.fittrackpro.android.ui.viewmodels.AddGoalViewModel
 import com.fittrackpro.shared.domain.model.GoalType
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
@@ -106,9 +108,17 @@ fun AddGoalScreen(
                 }
             }
 
-            DatePicker(
-                deadline = deadline,
-                onDateSelected = { deadline = it }
+            OutlinedTextField(
+                value = deadline.toString(),
+                onValueChange = { },
+                readOnly = true,
+                label = { Text("Deadline") },
+                trailingIcon = {
+                    IconButton(onClick = { /* TODO: Show date picker */ }) {
+                        Icon(Icons.Default.CalendarToday, contentDescription = "Select Date")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
             )
 
             Button(
@@ -149,7 +159,7 @@ fun DatePicker(
             IconButton(onClick = { 
                 // Implement date picker dialog here
             }) {
-                Icon(Icons.Default.DateRange, contentDescription = "Select Date")
+                Icon(Icons.Default.CalendarToday, contentDescription = "Select Date")
             }
         }
     )
