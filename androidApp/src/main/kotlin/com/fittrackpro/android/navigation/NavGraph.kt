@@ -27,22 +27,22 @@ fun NavGraph(
         modifier = modifier
     ) {
         composable(Screen.Home.route) {
-            HomeScreen(navController)
+            HomeScreen(navController = navController)
         }
         composable(Screen.Workouts.route) {
-            WorkoutsScreen(navController)
+            WorkoutsScreen(navController = navController)
         }
         composable(Screen.AddWorkout.route) {
-            AddWorkoutScreen(navController)
+            AddWorkoutScreen(navController = navController)
         }
         composable(Screen.Goals.route) {
-            GoalsScreen(navController)
+            GoalsScreen(navController = navController)
         }
         composable(Screen.AddGoal.route) {
-            AddGoalScreen(navController)
+            AddGoalScreen(navController = navController)
         }
         composable(Screen.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(navController = navController)
         }
     }
 }

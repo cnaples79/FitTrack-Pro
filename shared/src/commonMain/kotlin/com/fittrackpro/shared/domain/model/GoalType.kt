@@ -4,9 +4,23 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class GoalType {
+    STEPS,
+    DISTANCE,
+    CALORIES,
     WORKOUT_COUNT,
-    WORKOUT_MINUTES,
-    CALORIE_BURN,
-    STRENGTH_SESSIONS,
-    CARDIO_SESSIONS
+    WEIGHT,
+    MUSCLE_MASS,
+    BODY_FAT,
+    WATER_INTAKE,
+    SLEEP_DURATION;
+
+    companion object {
+        fun fromString(value: String): GoalType {
+            return try {
+                valueOf(value.uppercase())
+            } catch (e: IllegalArgumentException) {
+                STEPS // Default value
+            }
+        }
+    }
 }

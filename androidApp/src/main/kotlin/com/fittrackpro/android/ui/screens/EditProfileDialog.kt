@@ -11,6 +11,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Placeable
 import com.fittrackpro.shared.domain.model.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -170,14 +172,14 @@ private fun FlowRow(
         content = content,
         modifier = modifier
     ) { measurables, constraints ->
-        val rows = mutableListOf<List<androidx.compose.ui.layout.Placeable>>()
-        var currentRow = mutableListOf<androidx.compose.ui.layout.Placeable>()
+        val rows = mutableListOf<List<Placeable>>()
+        var currentRow = mutableListOf<Placeable>()
         var currentRowWidth = 0
 
         measurables.forEach { measurable ->
             val placeable = measurable.measure(constraints.copy(minWidth = 0))
             if (currentRowWidth + placeable.width > constraints.maxWidth) {
-                rows.add(currentRow)
+                rows.add(currentRow.toList())
                 currentRow = mutableListOf()
                 currentRowWidth = 0
             }
@@ -185,16 +187,20 @@ private fun FlowRow(
             currentRowWidth += placeable.width
         }
         if (currentRow.isNotEmpty()) {
-            rows.add(currentRow)
+            rows.add(currentRow.toList())
         }
 
         val height = rows.sumOf { row -> row.maxOf { it.height } }
         layout(constraints.maxWidth, height) {
             var y = 0
             rows.forEach { row ->
-                var x = 0
+                var x = when (horizontalArrangement) {
+                    Arrangement.Center -> (constraints.maxWidth - row.sumOf { it.width }) / 2
+                    Arrangement.End -> constraints.maxWidth - row.sumOf { it.width }
+                    else -> 0
+                }
                 row.forEach { placeable ->
-                    placeable.place(x, y)
+                    placeable.place(x = x, y = y)
                     x += placeable.width
                 }
                 y += row.maxOf { it.height }

@@ -2,42 +2,41 @@ package com.fittrackpro.android.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.fittrackpro.android.ui.viewmodels.GoalViewModel
-import com.fittrackpro.shared.domain.model.Goal
-import com.fittrackpro.shared.domain.model.GoalStatus
+import com.fittrackpro.android.ui.viewmodels.AddGoalViewModel
 import com.fittrackpro.shared.domain.model.GoalType
-import kotlinx.datetime.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddGoalScreen(
     navController: NavController,
-    viewModel: GoalViewModel = viewModel()
+    viewModel: AddGoalViewModel = viewModel()
 ) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var target by remember { mutableStateOf("") }
-    var goalType by remember { mutableStateOf(GoalType.WORKOUT_COUNT) }
-    var targetDate by remember { mutableStateOf(
-        Clock.System.now()
-            .plus(30, DateTimeUnit.DAY, TimeZone.currentSystemDefault())
-            .toLocalDateTime(TimeZone.currentSystemDefault())
-            .date
-    ) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showError by remember { mutableStateOf(false) }
+    var targetValue by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf(GoalType.STEPS) }
+    var deadline by remember { 
+        mutableStateOf(
+            Clock.System.now()
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+                .date
+                .plus(DatePeriod(days = 7))
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -47,11 +46,7 @@ fun AddGoalScreen(
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                }
             )
         }
     ) { paddingValues ->
@@ -66,9 +61,8 @@ fun AddGoalScreen(
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Goal Title") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                label = { Text("Title") },
+                modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
@@ -76,21 +70,27 @@ fun AddGoalScreen(
                 onValueChange = { description = it },
                 label = { Text("Description") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 2,
-                maxLines = 3
+                minLines = 3
+            )
+
+            OutlinedTextField(
+                value = targetValue,
+                onValueChange = { targetValue = it },
+                label = { Text("Target Value") },
+                modifier = Modifier.fillMaxWidth()
             )
 
             ExposedDropdownMenuBox(
                 expanded = false,
-                onExpandedChange = { }
+                onExpandedChange = { },
+                modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value = goalType.name.replace("_", " "),
+                    value = selectedType.name,
                     onValueChange = { },
                     readOnly = true,
-                    label = { Text("Goal Type") },
-                    modifier = Modifier.fillMaxWidth(),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) }
+                    label = { Text("Type") },
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 ExposedDropdownMenu(
@@ -99,78 +99,32 @@ fun AddGoalScreen(
                 ) {
                     GoalType.values().forEach { type ->
                         DropdownMenuItem(
-                            text = { Text(type.name.replace("_", " ")) },
-                            onClick = { goalType = type }
+                            text = { Text(type.name) },
+                            onClick = { selectedType = type }
                         )
                     }
                 }
             }
 
-            OutlinedTextField(
-                value = target,
-                onValueChange = { target = it },
-                label = { 
-                    Text(
-                        when (goalType) {
-                            GoalType.WORKOUT_COUNT -> "Number of Workouts"
-                            GoalType.WORKOUT_MINUTES -> "Total Minutes"
-                            GoalType.CALORIE_BURN -> "Total Calories"
-                            GoalType.STRENGTH_SESSIONS -> "Number of Sessions"
-                            GoalType.CARDIO_SESSIONS -> "Number of Sessions"
-                        }
-                    )
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+            DatePicker(
+                deadline = deadline,
+                onDateSelected = { deadline = it }
             )
-
-            OutlinedTextField(
-                value = targetDate.toString(),
-                onValueChange = { },
-                label = { Text("Target Date") },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.DateRange, contentDescription = "Select Date")
-                    }
-                }
-            )
-
-            if (showError) {
-                Text(
-                    text = "Please fill in all required fields",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
 
             Button(
                 onClick = {
-                    if (title.isBlank() || description.isBlank() || target.isBlank()) {
-                        showError = true
+                    if (title.isBlank() || description.isBlank() || targetValue.isBlank()) {
                         return@Button
                     }
 
-                    val goal = Goal(
-                        id = 0L, // This will be set by SQLDelight
-                        userId = 1L, // Using default user ID
+                    viewModel.addGoal(
                         title = title,
                         description = description,
-                        type = goalType,
-                        targetValue = target.toDoubleOrNull() ?: 0.0,
-                        currentValue = 0.0,
-                        status = GoalStatus.IN_PROGRESS,
-                        startDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
-                        endDate = Clock.System.now()
-                            .plus(30, DateTimeUnit.DAY, TimeZone.currentSystemDefault())
-                            .toLocalDateTime(TimeZone.currentSystemDefault()).date,
-                        createdAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
-                        updatedAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                        targetValue = targetValue.toDoubleOrNull() ?: 0.0,
+                        type = selectedType,
+                        deadline = deadline
                     )
-                    viewModel.addGoal(goal)
-                    navController.popBackStack()
+                    navController.navigateUp()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -178,35 +132,25 @@ fun AddGoalScreen(
             }
         }
     }
+}
 
-    if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = targetDate.toEpochDays() * 24L * 60L * 60L * 1000L
-        )
-
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        datePickerState.selectedDateMillis?.let { millis ->
-                            targetDate = Instant.fromEpochMilliseconds(millis)
-                                .toLocalDateTime(TimeZone.currentSystemDefault())
-                                .date
-                        }
-                        showDatePicker = false
-                    }
-                ) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
-                }
+@Composable
+fun DatePicker(
+    deadline: kotlinx.datetime.LocalDate,
+    onDateSelected: (kotlinx.datetime.LocalDate) -> Unit
+) {
+    OutlinedTextField(
+        value = deadline.toString(),
+        onValueChange = { },
+        readOnly = true,
+        label = { Text("Deadline") },
+        modifier = Modifier.fillMaxWidth(),
+        trailingIcon = {
+            IconButton(onClick = { 
+                // Implement date picker dialog here
+            }) {
+                Icon(Icons.Default.DateRange, contentDescription = "Select Date")
             }
-        ) {
-            DatePicker(state = datePickerState)
         }
-    }
+    )
 }

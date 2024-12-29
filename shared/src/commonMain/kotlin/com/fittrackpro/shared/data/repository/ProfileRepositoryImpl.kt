@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.map
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToOne
 import app.cash.sqldelight.coroutines.mapToOneOrNull
+import kotlinx.coroutines.Dispatchers
 
 class ProfileRepositoryImpl(
     private val database: FitTrackDatabase
@@ -45,7 +46,7 @@ class ProfileRepositoryImpl(
     override fun observeProfile(userId: Long): Flow<Profile?> {
         return database.profileQueries.observeProfile(userId)
             .asFlow()
-            .mapToOneOrNull()
+            .mapToOneOrNull(Dispatchers.Default)
             .map { profile ->
                 profile?.let {
                     Profile(

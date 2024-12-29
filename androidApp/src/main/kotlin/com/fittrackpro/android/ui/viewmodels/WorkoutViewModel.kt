@@ -2,22 +2,18 @@ package com.fittrackpro.android.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fittrackpro.android.ui.states.UiState
 import com.fittrackpro.shared.domain.model.Workout
 import com.fittrackpro.shared.domain.model.WorkoutType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.*
 
 class WorkoutViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow<WorkoutUiState>(WorkoutUiState.Loading)
-    val uiState: StateFlow<WorkoutUiState> = _uiState.asStateFlow()
-
-    private val _workouts = MutableStateFlow<List<Workout>>(emptyList())
-    val workouts: StateFlow<List<Workout>> = _workouts.asStateFlow()
+    private val _uiState = MutableStateFlow<UiState<List<Workout>>>(UiState.Loading)
+    val uiState: StateFlow<UiState<List<Workout>>> = _uiState.asStateFlow()
 
     init {
         loadWorkouts()
@@ -27,57 +23,77 @@ class WorkoutViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 // TODO: Replace with actual repository call
-                val mockWorkouts = createMockWorkouts()
-                _workouts.value = mockWorkouts
-                _uiState.value = WorkoutUiState.Success
+                val workouts = listOf<Workout>() // Temporary empty list
+                _uiState.value = UiState.Success(workouts)
             } catch (e: Exception) {
-                _uiState.value = WorkoutUiState.Error(e.message ?: "Unknown error occurred")
+                _uiState.value = UiState.Error(e.message ?: "Failed to load workouts")
             }
         }
     }
 
-    fun addWorkout(workout: Workout) {
+    fun addWorkout(
+        type: String,
+        duration: Long,
+        caloriesBurned: Long?,
+        distance: Double?,
+        notes: String?
+    ) {
         viewModelScope.launch {
             try {
-                // TODO: Replace with actual repository call
-                val currentWorkouts = _workouts.value.toMutableList()
-                currentWorkouts.add(workout)
-                _workouts.value = currentWorkouts
+                val workout = Workout(
+                    id = 0, // This will be replaced by the database
+                    userId = 1, // TODO: Get from auth
+                    type = type,
+                    duration = duration,
+                    caloriesBurned = caloriesBurned,
+                    distance = distance,
+                    date = Clock.System.now().toEpochMilliseconds(),
+                    notes = notes
+                )
+                // TODO: Add workout to repository
+                loadWorkouts() // Reload workouts after adding
             } catch (e: Exception) {
-                _uiState.value = WorkoutUiState.Error(e.message ?: "Failed to add workout")
+                _uiState.value = UiState.Error(e.message ?: "Failed to add workout")
             }
         }
     }
 
-    private fun createMockWorkouts(): List<Workout> {
-        val now = Clock.System.now()
-        val localDateTime = now.toLocalDateTime(TimeZone.currentSystemDefault())
-        
-        return listOf(
-            Workout(
-                id = "1",
-                name = "Morning Run",
-                type = WorkoutType.CARDIO,
-                duration = 30,
-                caloriesBurned = 300,
-                date = localDateTime,
-                notes = "Great morning run!"
-            ),
-            Workout(
-                id = "2",
-                name = "Weight Training",
-                type = WorkoutType.STRENGTH,
-                duration = 45,
-                caloriesBurned = 200,
-                date = localDateTime,
-                notes = "Upper body focus"
-            )
-        )
+    fun updateWorkout(
+        id: Long,
+        type: String,
+        duration: Long,
+        caloriesBurned: Long?,
+        distance: Double?,
+        notes: String?
+    ) {
+        viewModelScope.launch {
+            try {
+                val workout = Workout(
+                    id = id,
+                    userId = 1, // TODO: Get from auth
+                    type = type,
+                    duration = duration,
+                    caloriesBurned = caloriesBurned,
+                    distance = distance,
+                    date = Clock.System.now().toEpochMilliseconds(),
+                    notes = notes
+                )
+                // TODO: Update workout in repository
+                loadWorkouts() // Reload workouts after updating
+            } catch (e: Exception) {
+                _uiState.value = UiState.Error(e.message ?: "Failed to update workout")
+            }
+        }
     }
-}
 
-sealed class WorkoutUiState {
-    object Loading : WorkoutUiState()
-    object Success : WorkoutUiState()
-    data class Error(val message: String) : WorkoutUiState()
+    fun deleteWorkout(workoutId: Long) {
+        viewModelScope.launch {
+            try {
+                // TODO: Delete workout from repository
+                loadWorkouts() // Reload workouts after deleting
+            } catch (e: Exception) {
+                _uiState.value = UiState.Error(e.message ?: "Failed to delete workout")
+            }
+        }
+    }
 }

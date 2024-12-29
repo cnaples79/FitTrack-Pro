@@ -1,34 +1,34 @@
 package com.fittrackpro.android.ui.screens
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.fittrackpro.android.navigation.Screen
-import com.fittrackpro.android.ui.viewmodels.GoalViewModel
+import com.fittrackpro.android.ui.states.UiState
+import com.fittrackpro.android.ui.viewmodels.GoalsViewModel
 import com.fittrackpro.shared.domain.model.Goal
-import kotlinx.datetime.toJavaLocalDate
-import java.time.format.DateTimeFormatter
+import com.fittrackpro.shared.domain.model.GoalType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalsScreen(
     navController: NavController,
-    viewModel: GoalViewModel = viewModel()
+    viewModel: GoalsViewModel = viewModel()
 ) {
-    val goals by viewModel.goals.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.goals.collectAsState()
 
     Scaffold(
         topBar = {
@@ -49,7 +49,7 @@ fun GoalsScreen(
         }
     ) { paddingValues ->
         when (uiState) {
-            is GoalUiState.Loading -> {
+            is UiState.Loading -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -57,29 +57,31 @@ fun GoalsScreen(
                     CircularProgressIndicator()
                 }
             }
-            is GoalUiState.Error -> {
+            is UiState.Error -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = (uiState as GoalUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error
+                        text = (uiState as UiState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
             }
-            is GoalUiState.Success -> {
+            is UiState.Success -> {
+                val goals = (uiState as UiState.Success<List<Goal>>).data
                 if (goals.isEmpty()) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues),
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No goals yet.\nTap + to add your first goal!",
+                            text = "No goals yet. Add one by tapping the + button!",
                             style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(16.dp)
                         )
                     }
                 } else {
@@ -88,15 +90,10 @@ fun GoalsScreen(
                             .fillMaxSize()
                             .padding(paddingValues),
                         contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(goals) { goal ->
-                            GoalCard(
-                                goal = goal,
-                                onProgressUpdate = { progress ->
-                                    viewModel.updateGoalProgress(goal.id, progress)
-                                }
-                            )
+                            GoalCard(goal = goal)
                         }
                     }
                 }
@@ -105,14 +102,9 @@ fun GoalsScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GoalCard(
-    goal: Goal,
-    onProgressUpdate: (Int) -> Unit
-) {
-    var showProgressDialog by remember { mutableStateOf(false) }
-    var progressInput by remember { mutableStateOf(goal.progress.toString()) }
-
+fun GoalCard(goal: Goal) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -120,17 +112,15 @@ fun GoalCard(
         )
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = goal.title,
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
             Text(
                 text = goal.description,
                 style = MaterialTheme.typography.bodyMedium,
@@ -138,119 +128,104 @@ fun GoalCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            GoalProgress(
-                current = goal.progress,
-                target = goal.target,
-                onClick = { showProgressDialog = true }
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Target: ${goal.targetDate.toJavaLocalDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Chip(
-                    onClick = { },
-                    colors = ChipDefaults.chipColors(
-                        containerColor = if (goal.completed) 
-                            MaterialTheme.colorScheme.primaryContainer 
-                        else MaterialTheme.colorScheme.secondaryContainer
+                Column {
+                    Text(
+                        text = "Target: ${goal.targetValue} ${goal.type.name.lowercase()}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                ) {
-                    Text(if (goal.completed) "Completed" else "In Progress")
+                    Text(
+                        text = "Due ${goal.deadline}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
+                LinearProgressIndicator(
+                    progress = goal.progress,
+                    modifier = Modifier.width(100.dp)
+                )
             }
         }
-    }
-
-    if (showProgressDialog) {
-        AlertDialog(
-            onDismissRequest = { showProgressDialog = false },
-            title = { Text("Update Progress") },
-            text = {
-                OutlinedTextField(
-                    value = progressInput,
-                    onValueChange = { progressInput = it },
-                    label = { Text("Current Progress") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        progressInput.toIntOrNull()?.let { progress ->
-                            onProgressUpdate(progress)
-                        }
-                        showProgressDialog = false
-                    }
-                ) {
-                    Text("Update")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showProgressDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GoalProgress(
-    current: Int,
-    target: Int,
-    onClick: () -> Unit
+fun AddGoalDialog(
+    onDismissRequest: () -> Unit,
+    onConfirm: (String, String, Double, GoalType) -> Unit
 ) {
-    val progress = (current.toFloat() / target).coerceIn(0f, 1f)
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress,
-        label = "Progress Animation"
-    )
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var targetValue by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf(GoalType.STEPS) }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "$current/$target",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "${(progress * 100).toInt()}%",
-                style = MaterialTheme.typography.bodyMedium
-            )
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text("Add New Goal") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                OutlinedTextField(
+                    value = targetValue,
+                    onValueChange = { targetValue = it },
+                    label = { Text("Target Value") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                ExposedDropdownMenuBox(
+                    expanded = false,
+                    onExpandedChange = { },
+                ) {
+                    OutlinedTextField(
+                        value = selectedType.name,
+                        onValueChange = { },
+                        readOnly = true,
+                        label = { Text("Type") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val target = targetValue.toDoubleOrNull() ?: 0.0
+                    onConfirm(title, description, target, selectedType)
+                }
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text("Cancel")
+            }
         }
-        
-        Spacer(modifier = Modifier.height(4.dp))
-        
-        LinearProgressIndicator(
-            progress = animatedProgress,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.primaryContainer
-        )
-        
-        TextButton(
-            onClick = onClick,
-            modifier = Modifier.align(Alignment.End)
-        ) {
-            Text("Update Progress")
-        }
-    }
+    )
 }

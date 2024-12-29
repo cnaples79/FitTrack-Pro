@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.map
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOneOrNull
-import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.coroutines.Dispatchers
 
 class WorkoutRepositoryImpl(
@@ -16,30 +16,30 @@ class WorkoutRepositoryImpl(
 ) : WorkoutRepository {
 
     override suspend fun getWorkouts(): List<Workout> {
-        return database.workoutQueries.getAllWorkouts().executeAsList().map { workoutEntity ->
+        return database.workoutQueries.getAllWorkouts().executeAsList().map { workout ->
             Workout(
-                id = workoutEntity.id,
-                userId = workoutEntity.user_id,
-                name = workoutEntity.name,
-                type = workoutEntity.type,
-                duration = workoutEntity.duration,
-                caloriesBurned = workoutEntity.calories_burned,
-                date = LocalDate.fromEpochDays(workoutEntity.date.toInt()),
-                notes = workoutEntity.notes
+                id = workout.id,
+                userId = workout.user_id,
+                type = workout.type,
+                duration = workout.duration,
+                caloriesBurned = workout.calories_burned,
+                distance = workout.distance,
+                date = workout.date,
+                notes = workout.notes
             )
         }
     }
 
-    override suspend fun getWorkout(id: Long): Workout? {
-        return database.workoutQueries.getWorkout(id).executeAsOneOrNull()?.let { workout ->
+    override suspend fun getWorkout(id: String): Workout? {
+        return database.workoutQueries.getWorkoutById(id.toLong()).executeAsOneOrNull()?.let { workout ->
             Workout(
                 id = workout.id,
                 userId = workout.user_id,
-                name = workout.name,
                 type = workout.type,
                 duration = workout.duration,
                 caloriesBurned = workout.calories_burned,
-                date = LocalDate.fromEpochDays(workout.date.toInt()),
+                distance = workout.distance,
+                date = workout.date,
                 notes = workout.notes
             )
         }
@@ -48,46 +48,45 @@ class WorkoutRepositoryImpl(
     override suspend fun addWorkout(workout: Workout) {
         database.workoutQueries.insertWorkout(
             user_id = workout.userId,
-            name = workout.name,
             type = workout.type,
             duration = workout.duration,
             calories_burned = workout.caloriesBurned,
-            date = workout.date.toEpochDays().toLong(),
+            distance = workout.distance,
+            date = workout.date,
             notes = workout.notes
         )
     }
 
     override suspend fun updateWorkout(workout: Workout) {
         database.workoutQueries.updateWorkout(
-            name = workout.name,
             type = workout.type,
             duration = workout.duration,
             calories_burned = workout.caloriesBurned,
-            date = workout.date.toEpochDays().toLong(),
+            distance = workout.distance,
             notes = workout.notes,
             id = workout.id
         )
     }
 
-    override suspend fun deleteWorkout(id: Long) {
-        database.workoutQueries.deleteWorkout(id)
+    override suspend fun deleteWorkout(id: String) {
+        database.workoutQueries.deleteWorkout(id.toLong())
     }
 
-    override suspend fun getWorkoutsByDateRange(start: LocalDate, end: LocalDate): List<Workout> {
+    override suspend fun getWorkoutsByDateRange(start: LocalDateTime, end: LocalDateTime): List<Workout> {
         return database.workoutQueries.getWorkoutsByDateRange(
             user_id = 1, // TODO: Get current user ID from UserManager
-            date = start.toEpochDays().toLong(),
-            date_ = end.toEpochDays().toLong()
-        ).executeAsList().map { workoutEntity ->
+            date = start.date.toEpochDays().toLong(),
+            date_ = end.date.toEpochDays().toLong()
+        ).executeAsList().map { workout ->
             Workout(
-                id = workoutEntity.id,
-                userId = workoutEntity.user_id,
-                name = workoutEntity.name,
-                type = workoutEntity.type,
-                duration = workoutEntity.duration,
-                caloriesBurned = workoutEntity.calories_burned,
-                date = LocalDate.fromEpochDays(workoutEntity.date.toInt()),
-                notes = workoutEntity.notes
+                id = workout.id,
+                userId = workout.user_id,
+                type = workout.type,
+                duration = workout.duration,
+                caloriesBurned = workout.calories_burned,
+                distance = workout.distance,
+                date = workout.date,
+                notes = workout.notes
             )
         }
     }
@@ -96,17 +95,17 @@ class WorkoutRepositoryImpl(
         return database.workoutQueries.getAllWorkouts()
             .asFlow()
             .mapToList(Dispatchers.Default)
-            .map { workoutEntities ->
-                workoutEntities.map { workoutEntity ->
+            .map { workouts ->
+                workouts.map { workout ->
                     Workout(
-                        id = workoutEntity.id,
-                        userId = workoutEntity.user_id,
-                        name = workoutEntity.name,
-                        type = workoutEntity.type,
-                        duration = workoutEntity.duration,
-                        caloriesBurned = workoutEntity.calories_burned,
-                        date = LocalDate.fromEpochDays(workoutEntity.date.toInt()),
-                        notes = workoutEntity.notes
+                        id = workout.id,
+                        userId = workout.user_id,
+                        type = workout.type,
+                        duration = workout.duration,
+                        caloriesBurned = workout.calories_burned,
+                        distance = workout.distance,
+                        date = workout.date,
+                        notes = workout.notes
                     )
                 }
             }

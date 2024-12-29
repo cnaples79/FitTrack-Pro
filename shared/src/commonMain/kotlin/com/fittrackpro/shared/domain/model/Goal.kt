@@ -12,9 +12,9 @@ data class Goal(
     val type: GoalType,
     val targetValue: Double,
     val currentValue: Double = 0.0,
+    val deadline: LocalDate,
     val status: GoalStatus = GoalStatus.NOT_STARTED,
-    val startDate: LocalDate,
-    val endDate: LocalDate,
     val createdAt: LocalDate,
-    val updatedAt: LocalDate
+    val updatedAt: LocalDate,
+    val progress: Float = (currentValue / targetValue).toFloat().coerceIn(0f, 1f)
 )
