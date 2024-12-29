@@ -79,3 +79,8 @@ WHERE id = ?;
 deleteGoal:
 DELETE FROM Goal
 WHERE id = ?;
+
+deleteOldCompletedGoals:
+DELETE FROM Goal
+WHERE status = ?
+AND updated_at < ?;

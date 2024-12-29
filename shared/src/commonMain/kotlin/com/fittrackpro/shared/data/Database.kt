@@ -57,18 +57,26 @@ fun createDatabase(driver: SqlDriver): FitTrackDatabase {
         isLenient = true
     }
 
-    return FitTrackDatabase(
+    val typeAdapter = EnumColumnAdapter(GoalType.values())
+    val statusAdapter = EnumColumnAdapter(GoalStatus.values())
+    val genderAdapter = EnumColumnAdapter(Gender.values())
+    val fitnessLevelAdapter = EnumColumnAdapter(FitnessLevel.values())
+    val activityLevelAdapter = EnumColumnAdapter(ActivityLevel.values())
+    val workoutTypesAdapter = ListColumnAdapter(ListSerializer(serializer<WorkoutType>()))
+    val fitnessGoalsAdapter = ListColumnAdapter(ListSerializer(serializer<String>()))
+
+    return FitTrackDatabase.invoke(
         driver = driver,
         ProfileAdapter = Profile.Adapter(
-            genderAdapter = EnumColumnAdapter(Gender.values()),
-            fitnessLevelAdapter = EnumColumnAdapter(FitnessLevel.values()),
-            activityLevelAdapter = EnumColumnAdapter(ActivityLevel.values()),
-            preferredWorkoutTypesAdapter = ListColumnAdapter(ListSerializer(serializer<WorkoutType>())),
-            fitnessGoalsAdapter = ListColumnAdapter(ListSerializer(serializer<String>()))
+            genderAdapter = genderAdapter,
+            fitnessLevelAdapter = fitnessLevelAdapter,
+            activityLevelAdapter = activityLevelAdapter,
+            preferredWorkoutTypesAdapter = workoutTypesAdapter,
+            fitnessGoalsAdapter = fitnessGoalsAdapter
         ),
-        Goal_Adapter = Goal.Adapter(
-            typeAdapter = EnumColumnAdapter(GoalType.values()),
-            statusAdapter = EnumColumnAdapter(GoalStatus.values())
+        GoalAdapter = Goal.Adapter(
+            typeAdapter = typeAdapter,
+            statusAdapter = statusAdapter
         )
     )
 }
