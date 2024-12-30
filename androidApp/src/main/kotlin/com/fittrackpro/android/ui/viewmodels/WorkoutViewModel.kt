@@ -5,13 +5,17 @@ import androidx.lifecycle.viewModelScope
 import com.fittrackpro.android.ui.states.UiState
 import com.fittrackpro.shared.domain.model.Workout
 import com.fittrackpro.shared.domain.model.WorkoutType
+import com.fittrackpro.shared.domain.repository.WorkoutRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class WorkoutViewModel : ViewModel() {
+class WorkoutViewModel : ViewModel(), KoinComponent {
+    private val repository: WorkoutRepository by inject()
     private val _uiState = MutableStateFlow<UiState<List<Workout>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<Workout>>> = _uiState.asStateFlow()
 
@@ -22,9 +26,9 @@ class WorkoutViewModel : ViewModel() {
     private fun loadWorkouts() {
         viewModelScope.launch {
             try {
-                // TODO: Replace with actual repository call
-                val workouts = listOf<Workout>() // Temporary empty list
-                _uiState.value = UiState.Success(workouts)
+                repository.getWorkouts().collect { workouts ->
+                    _uiState.value = UiState.Success(workouts)
+                }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to load workouts")
             }
@@ -40,18 +44,15 @@ class WorkoutViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             try {
-                val workout = Workout(
-                    id = 0, // This will be replaced by the database
-                    userId = 1, // TODO: Get from auth
+                repository.addWorkout(
                     type = type,
                     duration = duration,
                     caloriesBurned = caloriesBurned,
                     distance = distance,
-                    date = Clock.System.now().toEpochMilliseconds(),
                     notes = notes
-                )
-                // TODO: Add workout to repository
-                loadWorkouts() // Reload workouts after adding
+                ).collect { workout ->
+                    loadWorkouts() // Refresh the list after adding
+                }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to add workout")
             }
@@ -68,29 +69,32 @@ class WorkoutViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             try {
-                val workout = Workout(
+                repository.updateWorkout(
                     id = id,
-                    userId = 1, // TODO: Get from auth
                     type = type,
                     duration = duration,
                     caloriesBurned = caloriesBurned,
                     distance = distance,
-                    date = Clock.System.now().toEpochMilliseconds(),
                     notes = notes
-                )
-                // TODO: Update workout in repository
-                loadWorkouts() // Reload workouts after updating
+                ).collect { workout ->
+                    loadWorkouts() // Refresh the list after updating
+                }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to update workout")
             }
         }
     }
 
-    fun deleteWorkout(workoutId: Long) {
+    fun deleteWorkout(id: Long) {
         viewModelScope.launch {
             try {
-                // TODO: Delete workout from repository
-                loadWorkouts() // Reload workouts after deleting
+                repository.deleteWorkout(id).collect { success ->
+                    if (success) {
+                        loadWorkouts() // Refresh the list after deleting
+                    } else {
+                        _uiState.value = UiState.Error("Failed to delete workout")
+                    }
+                }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to delete workout")
             }

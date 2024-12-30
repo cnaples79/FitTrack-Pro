@@ -35,9 +35,9 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
     }
 
     fun initializeRepositories(userId: Long) {
-        _workoutRepository = RepositoryFactory.createWorkoutRepository(database)
+        _workoutRepository = RepositoryFactory.createWorkoutRepository(database, userId)
         _goalRepository = RepositoryFactory.createGoalRepository(database, userId)
-        _userProfileRepository = RepositoryFactory.createUserProfileRepository(database)
+        _userProfileRepository = RepositoryFactory.createUserProfileRepository(database, userId)
     }
 
     val workoutRepository: WorkoutRepository

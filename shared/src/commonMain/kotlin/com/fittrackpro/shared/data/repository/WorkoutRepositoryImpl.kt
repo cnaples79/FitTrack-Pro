@@ -1,4 +1,4 @@
-package com.fittrackpro.shared.data.repository
+package com.fittrackpro.shared.data.repository.impl
 
 import com.fittrackpro.shared.FitTrackDatabase
 import com.fittrackpro.shared.domain.model.Workout
@@ -12,11 +12,12 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.coroutines.Dispatchers
 
 class WorkoutRepositoryImpl(
-    private val database: FitTrackDatabase
+    private val database: FitTrackDatabase,
+    private val userId: Long
 ) : WorkoutRepository {
 
     override suspend fun getWorkouts(): List<Workout> {
-        return database.workoutQueries.getAllWorkouts().executeAsList().map { workout ->
+        return database.workoutQueries.getWorkoutsByUserId(userId).executeAsList().map { workout ->
             Workout(
                 id = workout.id,
                 userId = workout.user_id,
@@ -31,7 +32,7 @@ class WorkoutRepositoryImpl(
     }
 
     override suspend fun getWorkout(id: String): Workout? {
-        return database.workoutQueries.getWorkoutById(id.toLong()).executeAsOneOrNull()?.let { workout ->
+        return database.workoutQueries.getWorkoutById(id.toLong(), userId).executeAsOneOrNull()?.let { workout ->
             Workout(
                 id = workout.id,
                 userId = workout.user_id,
@@ -47,7 +48,7 @@ class WorkoutRepositoryImpl(
 
     override suspend fun addWorkout(workout: Workout) {
         database.workoutQueries.insertWorkout(
-            user_id = workout.userId,
+            user_id = userId,
             type = workout.type,
             duration = workout.duration,
             calories_burned = workout.caloriesBurned,
@@ -59,12 +60,14 @@ class WorkoutRepositoryImpl(
 
     override suspend fun updateWorkout(workout: Workout) {
         database.workoutQueries.updateWorkout(
+            id = workout.id,
+            user_id = userId,
             type = workout.type,
             duration = workout.duration,
             calories_burned = workout.caloriesBurned,
             distance = workout.distance,
-            notes = workout.notes,
-            id = workout.id
+            date = workout.date,
+            notes = workout.notes
         )
     }
 
@@ -74,7 +77,7 @@ class WorkoutRepositoryImpl(
 
     override suspend fun getWorkoutsByDateRange(start: LocalDateTime, end: LocalDateTime): List<Workout> {
         return database.workoutQueries.getWorkoutsByDateRange(
-            user_id = 1, // TODO: Get current user ID from UserManager
+            user_id = userId,
             date = start.date.toEpochDays().toLong(),
             date_ = end.date.toEpochDays().toLong()
         ).executeAsList().map { workout ->
@@ -92,7 +95,7 @@ class WorkoutRepositoryImpl(
     }
 
     override fun observeWorkouts(): Flow<List<Workout>> {
-        return database.workoutQueries.getAllWorkouts()
+        return database.workoutQueries.getWorkoutsByUserId(userId)
             .asFlow()
             .mapToList(Dispatchers.Default)
             .map { workouts ->

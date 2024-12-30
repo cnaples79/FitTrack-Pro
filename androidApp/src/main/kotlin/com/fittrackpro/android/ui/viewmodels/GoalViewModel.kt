@@ -6,13 +6,17 @@ import com.fittrackpro.android.ui.states.UiState
 import com.fittrackpro.shared.domain.model.Goal
 import com.fittrackpro.shared.domain.model.GoalType
 import com.fittrackpro.shared.domain.model.GoalStatus
+import com.fittrackpro.shared.domain.repository.GoalRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class GoalViewModel : ViewModel() {
+class GoalViewModel : ViewModel(), KoinComponent {
+    private val repository: GoalRepository by inject()
     private val _uiState = MutableStateFlow<UiState<List<Goal>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<Goal>>> = _uiState.asStateFlow()
 
@@ -23,9 +27,9 @@ class GoalViewModel : ViewModel() {
     private fun loadGoals() {
         viewModelScope.launch {
             try {
-                // TODO: Replace with actual repository call
-                val goals = listOf<Goal>() // Temporary empty list
-                _uiState.value = UiState.Success(goals)
+                repository.getGoals().collect { goals ->
+                    _uiState.value = UiState.Success(goals)
+                }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to load goals")
             }
@@ -41,45 +45,57 @@ class GoalViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             try {
-                val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-                val goal = Goal(
-                    id = 0, // This will be replaced by the database
-                    userId = 1, // TODO: Get from auth
+                repository.addGoal(
                     title = name,
                     description = description,
-                    targetValue = targetValue,
-                    currentValue = 0.0,
                     type = type,
-                    status = GoalStatus.NOT_STARTED,
-                    startDate = now,
-                    endDate = deadline,
-                    createdAt = now,
-                    updatedAt = now
-                )
-                // TODO: Add goal to repository
-                loadGoals() // Reload goals after adding
+                    targetValue = targetValue,
+                    deadline = deadline
+                ).collect { goal ->
+                    loadGoals() // Refresh the list after adding
+                }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to add goal")
             }
         }
     }
 
-    fun updateGoalProgress(goalId: Long, newValue: Double) {
+    fun updateGoal(
+        id: Long,
+        name: String,
+        description: String,
+        targetValue: Double,
+        type: GoalType,
+        deadline: LocalDate
+    ) {
         viewModelScope.launch {
             try {
-                // TODO: Update goal progress in repository
-                loadGoals() // Reload goals after updating
+                repository.updateGoal(
+                    id = id,
+                    title = name,
+                    description = description,
+                    type = type,
+                    targetValue = targetValue,
+                    deadline = deadline
+                ).collect { goal ->
+                    loadGoals() // Refresh the list after updating
+                }
             } catch (e: Exception) {
-                _uiState.value = UiState.Error(e.message ?: "Failed to update goal progress")
+                _uiState.value = UiState.Error(e.message ?: "Failed to update goal")
             }
         }
     }
 
-    fun deleteGoal(goalId: Long) {
+    fun deleteGoal(id: Long) {
         viewModelScope.launch {
             try {
-                // TODO: Delete goal from repository
-                loadGoals() // Reload goals after deleting
+                repository.deleteGoal(id).collect { success ->
+                    if (success) {
+                        loadGoals() // Refresh the list after deleting
+                    } else {
+                        _uiState.value = UiState.Error("Failed to delete goal")
+                    }
+                }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to delete goal")
             }
